@@ -16,6 +16,9 @@ import maya.cmds as cmds
 import maya.OpenMayaUI as omui
 from shiboken2 import wrapInstance
 from PySide2 import QtWidgets,QtCore,QtGui
+import correctiveBS_Tool as CBT
+reload(CBT)
+tool = CBT.CorrectiveBSTool()
 
 
 def maya_main_window():
@@ -29,7 +32,7 @@ def maya_main_window():
 class CorrectiveBSUI(QtWidgets.QDialog):
 
     BUTTON_BGC = "background-color:rgb(142,188,255);color:black;"
-    WINDOW_TITLE = 'Corrective BS v1.0.0'
+    WINDOW_TITLE = 'Corrective Tool v1.0.0'
     limitAngleExpr = QtCore.QRegExp('^-?(180|([1-9]?\d|1[0-7][0-9])(\.\d{1,2})?)$')
 
 
@@ -50,7 +53,6 @@ class CorrectiveBSUI(QtWidgets.QDialog):
         # 设置窗口标题
         self.setWindowTitle(self.WINDOW_TITLE)
         self.setFixedSize(470, 740)
-
 
         self.create_widgets()
         self.create_layouts()
@@ -211,6 +213,13 @@ class CorrectiveBSUI(QtWidgets.QDialog):
         self.type_layout.addWidget(self.adv_radioBtn)
         self.type_layout.addWidget(self.defined_radionBtn)
 
+        # 创建sculpt布局
+        self.sculpt_Layout = QtWidgets.QHBoxLayout()
+        self.sculpt_Layout.setContentsMargins(2,2,2,2)
+        self.sculpt_Layout.addWidget(self.sculpt_Btn)
+        self.sculpt_Layout.addWidget(self.mirror_Btn)
+        self.sculpt_Layout.addWidget(self.exit_Btn)
+
         # 创建控制器旋转数值显示 布局
         self.rotate_layout = QtWidgets.QHBoxLayout()
         self.rotate_layout.setContentsMargins(4,2,4,2)
@@ -226,6 +235,7 @@ class CorrectiveBSUI(QtWidgets.QDialog):
         main_Layout.addLayout(self.type_layout)
         main_Layout.addWidget(self.tabWidget)
         main_Layout.addLayout(self.rotate_layout)
+        main_Layout.addLayout(self.sculpt_Layout)
         main_Layout.addWidget(self.separator_02)
         main_Layout.addWidget(self.copyRight_label)
 
