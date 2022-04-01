@@ -11,8 +11,26 @@ launch :
 import maya.cmds as cmds
 import maya.OpenMaya as om
 
-class PoseBridgeTool(object):
+class CorrectiveBSTool(object):
 
     def __init__(self):
         pass
-    
+
+    def load_BaseGeo(self):
+        pass
+
+    def load_OriGeo(self):
+        pass
+
+    def get_blendShape(self):
+        pass
+
+    def add_blendShape(self):
+        pass
+
+    def del_blendShape(self):
+        pass
+
+
+    def connect_to_poseGrp(self):
+        pass
