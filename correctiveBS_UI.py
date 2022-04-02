@@ -1,7 +1,7 @@
 # .-*- coding: utf-8 -*-
 # .FileName:correctiveBS_UI
 # .Date....:2022-03-21 : 11 :10
-# .Aurhor..:Qian binjie
+# .Author..:Qian binjie
 # .Contact.:1075064966@qq.com
 '''
 launch :
@@ -18,7 +18,7 @@ from shiboken2 import wrapInstance
 from PySide2 import QtWidgets,QtCore,QtGui
 import correctiveBS_Tool as CBT
 reload(CBT)
-tool = CBT.CorrectiveBSTool()
+tool = CBT.CorrectiveBsTool()
 
 
 def maya_main_window():
@@ -29,7 +29,7 @@ def maya_main_window():
     return wrapInstance(long(main_window_ptr), QtWidgets.QWidget)
 
 
-class CorrectiveBSUI(QtWidgets.QDialog):
+class CorrectiveBsUI(QtWidgets.QDialog):
 
     BUTTON_BGC = "background-color:rgb(142,188,255);color:black;"
     WINDOW_TITLE = 'Corrective Tool v1.0.0'
@@ -37,10 +37,10 @@ class CorrectiveBSUI(QtWidgets.QDialog):
 
 
     def __init__(self,parent=maya_main_window()):
-        super(CorrectiveBSUI, self).__init__(parent)
+        super(CorrectiveBsUI, self).__init__(parent)
         self.setWindowFlags(self.windowFlags() ^ QtCore.Qt.WindowContextHelpButtonHint)
-        self.setWindowFlags(self.windowFlags() | QtCore.Qt.WindowMaximizeButtonHint)
-        self.setWindowFlags(self.windowFlags() | QtCore.Qt.WindowMinimizeButtonHint)
+        # self.setWindowFlags(self.windowFlags() | QtCore.Qt.WindowMaximizeButtonHint)
+        # self.setWindowFlags(self.windowFlags() | QtCore.Qt.WindowMinimizeButtonHint)
         self.showUI()
 
 
@@ -63,19 +63,19 @@ class CorrectiveBSUI(QtWidgets.QDialog):
 
     def create_widgets(self):
         # 创建加载Base_Geo 组件
-        self.baseGeo_Label = QtWidgets.QLabel('Base Geo:')
+        self.baseGeo_Label = QtWidgets.QLabel('Base Geo :')
         self.baseGeo_LineEdit = QtWidgets.QLineEdit()
         self.baseGeo_LineEdit.setReadOnly(True)
         self.baseGeo_Btn = QtWidgets.QPushButton('Load')
 
-        # 创建加载Ori_Geo 组件
-        self.oriGeo_Label = QtWidgets.QLabel('Ori Geo:')
-        self.oriGeo_LineEdit = QtWidgets.QLineEdit()
-        self.oriGeo_LineEdit.setReadOnly(True)
-        self.oriGeo_Btn = QtWidgets.QPushButton('Load')
+        # 创建加载target _Geo 组件
+        self.targetGeo_Label = QtWidgets.QLabel('Target  Geo :')
+        self.targetGeo_LineEdit = QtWidgets.QLineEdit()
+        self.targetGeo_LineEdit.setReadOnly(True)
+        self.targetGeo_Btn = QtWidgets.QPushButton('Load')
 
         # 创建加载blendShape 组件
-        self.blendshape_Label = QtWidgets.QLabel('blendShape:')
+        self.blendshape_Label = QtWidgets.QLabel('blendShape :')
         self.blendshape_comboBox = QtWidgets.QComboBox()
         self.add_Btn = QtWidgets.QPushButton('Add')
         self.del_Btn = QtWidgets.QPushButton('Del')
@@ -86,17 +86,19 @@ class CorrectiveBSUI(QtWidgets.QDialog):
         self.separator_01.setFrameShadow(QtWidgets.QFrame.Sunken)
 
         # 创建 控制器类型 组件
-        self.controlsType_Label = QtWidgets.QLabel('Type:')
+        self.controlsType_Label = QtWidgets.QLabel('Rig System :')
         # self.spacerItem_01 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding,
         #                                            QtWidgets.QSizePolicy.Minimum)
         self.adv_radioBtn = QtWidgets.QRadioButton('ADV')
         self.adv_radioBtn.setChecked(True)
+        self.humanIK_radioBtn = QtWidgets.QRadioButton('HumanIK')
         self.defined_radionBtn = QtWidgets.QRadioButton('Defined')
         self.defined_radionBtn.setEnabled(False)
 
         self.radionBtn_Grp = QtWidgets.QButtonGroup()
         self.radionBtn_Grp.addButton(self.adv_radioBtn,1)
-        self.radionBtn_Grp.addButton(self.defined_radionBtn,2)
+        self.radionBtn_Grp.addButton(self.humanIK_radioBtn, 2)
+        self.radionBtn_Grp.addButton(self.defined_radionBtn,3)
 
         # 创建tabWidget内 组件
         self.tabWidget = QtWidgets.QTabWidget()
@@ -109,13 +111,16 @@ class CorrectiveBSUI(QtWidgets.QDialog):
         self.arm_Layout.setContentsMargins(2, 2, 2, 2)
         self.arm_Layout.setSpacing(3)
         self.arm_CreateBtn = QtWidgets.QPushButton('Create Targets')
-        self.arm_Splitter = QtWidgets.QSplitter(self.arm_Tab)
-        self.arm_Splitter.setMinimumSize(QtCore.QSize(400, 0))
-        self.arm_Splitter.setOrientation(QtCore.Qt.Vertical)
-        self.arm_ListWidget_01 = QtWidgets.QListWidget(self.arm_Splitter)
-        self.arm_ListWidget_02 = QtWidgets.QListWidget(self.arm_Splitter)
+        self.arm_Splitter_01 = QtWidgets.QSplitter(self.arm_Tab)
+        self.arm_Splitter_01.setMinimumSize(QtCore.QSize(400, 0))
+        self.arm_Splitter_01.setOrientation(QtCore.Qt.Vertical)
+        self.arm_Splitter_02 = QtWidgets.QSplitter(self.arm_Splitter_01)
+        self.arm_Splitter_02.setOrientation(QtCore.Qt.Horizontal)
+        self.arm_ListWidget_01 = QtWidgets.QListWidget(self.arm_Splitter_02)
+        self.arm_ListWidget_02 = QtWidgets.QListWidget(self.arm_Splitter_02)
+        self.arm_ListWidget_03 = QtWidgets.QListWidget(self.arm_Splitter_01)
         self.arm_Layout.addWidget(self.arm_CreateBtn)
-        self.arm_Layout.addWidget(self.arm_Splitter)
+        self.arm_Layout.addWidget(self.arm_Splitter_01)
         self.tabWidget.addTab(self.arm_Tab,'Arm')
 
         self.leg_Tab = QtWidgets.QWidget(self.tabWidget)
@@ -124,13 +129,16 @@ class CorrectiveBSUI(QtWidgets.QDialog):
         self.leg_Layout.setContentsMargins(2, 2, 2, 2)
         self.leg_Layout.setSpacing(3)
         self.leg_CreateBtn = QtWidgets.QPushButton('Create Targets')
-        self.leg_Splitter = QtWidgets.QSplitter(self.leg_Tab)
-        self.leg_Splitter.setMinimumSize(QtCore.QSize(400, 0))
-        self.leg_Splitter.setOrientation(QtCore.Qt.Vertical)
-        self.leg_ListWidget_01 = QtWidgets.QListWidget(self.leg_Splitter)
-        self.leg_ListWidget_02 = QtWidgets.QListWidget(self.leg_Splitter)
+        self.leg_Splitter_01 = QtWidgets.QSplitter(self.leg_Tab)
+        self.leg_Splitter_01.setMinimumSize(QtCore.QSize(400, 0))
+        self.leg_Splitter_01.setOrientation(QtCore.Qt.Vertical)
+        self.leg_Splitter_02 = QtWidgets.QSplitter(self.leg_Splitter_01)
+        self.leg_Splitter_02.setOrientation(QtCore.Qt.Horizontal)
+        self.leg_ListWidget_01 = QtWidgets.QListWidget(self.leg_Splitter_02)
+        self.leg_ListWidget_02 = QtWidgets.QListWidget(self.leg_Splitter_02)
+        self.leg_ListWidget_03 = QtWidgets.QListWidget(self.leg_Splitter_01)
         self.leg_Layout.addWidget(self.leg_CreateBtn)
-        self.leg_Layout.addWidget(self.leg_Splitter)
+        self.leg_Layout.addWidget(self.leg_Splitter_01)
         self.tabWidget.addTab(self.leg_Tab, 'leg')
 
         self.finger_Tab = QtWidgets.QWidget(self.tabWidget)
@@ -139,13 +147,16 @@ class CorrectiveBSUI(QtWidgets.QDialog):
         self.finger_Layout.setContentsMargins(2, 2, 2, 2)
         self.finger_Layout.setSpacing(3)
         self.finger_CreateBtn = QtWidgets.QPushButton('Create Targets')
-        self.finger_Splitter = QtWidgets.QSplitter(self.finger_Tab)
-        self.finger_Splitter.setMinimumSize(QtCore.QSize(400, 0))
-        self.finger_Splitter.setOrientation(QtCore.Qt.Vertical)
-        self.finger_ListWidget_01 = QtWidgets.QListWidget(self.finger_Splitter)
-        self.finger_ListWidget_02 = QtWidgets.QListWidget(self.finger_Splitter)
+        self.finger_Splitter_01 = QtWidgets.QSplitter(self.finger_Tab)
+        self.finger_Splitter_01.setMinimumSize(QtCore.QSize(400, 0))
+        self.finger_Splitter_01.setOrientation(QtCore.Qt.Vertical)
+        self.finger_Splitter_02 = QtWidgets.QSplitter(self.finger_Splitter_01)
+        self.finger_Splitter_02.setOrientation(QtCore.Qt.Horizontal)
+        self.finger_ListWidget_01 = QtWidgets.QListWidget(self.finger_Splitter_02)
+        self.finger_ListWidget_02 = QtWidgets.QListWidget(self.finger_Splitter_02)
+        self.finger_ListWidget_03 = QtWidgets.QListWidget(self.finger_Splitter_01)
         self.finger_Layout.addWidget(self.finger_CreateBtn)
-        self.finger_Layout.addWidget(self.finger_Splitter)
+        self.finger_Layout.addWidget(self.finger_Splitter_01)
         self.tabWidget.addTab(self.finger_Tab, 'finger')
 
         self.torso_Tab = QtWidgets.QWidget(self.tabWidget)
@@ -154,13 +165,16 @@ class CorrectiveBSUI(QtWidgets.QDialog):
         self.torso_Layout.setContentsMargins(2, 2, 2, 2)
         self.torso_Layout.setSpacing(3)
         self.torso_CreateBtn = QtWidgets.QPushButton('Create Targets')
-        self.torso_Splitter = QtWidgets.QSplitter(self.torso_Tab)
-        self.torso_Splitter.setMinimumSize(QtCore.QSize(400, 0))
-        self.torso_Splitter.setOrientation(QtCore.Qt.Vertical)
-        self.torso_ListWidget_01 = QtWidgets.QListWidget(self.torso_Splitter)
-        self.torso_ListWidget_02 = QtWidgets.QListWidget(self.torso_Splitter)
+        self.torso_Splitter_01 = QtWidgets.QSplitter(self.torso_Tab)
+        self.torso_Splitter_01.setMinimumSize(QtCore.QSize(400, 0))
+        self.torso_Splitter_01.setOrientation(QtCore.Qt.Vertical)
+        self.torso_Splitter_02 = QtWidgets.QSplitter(self.torso_Splitter_01)
+        self.torso_Splitter_02.setOrientation(QtCore.Qt.Horizontal)
+        self.torso_ListWidget_01 = QtWidgets.QListWidget(self.torso_Splitter_02)
+        self.torso_ListWidget_02 = QtWidgets.QListWidget(self.torso_Splitter_02)
+        self.torso_ListWidget_03 = QtWidgets.QListWidget(self.torso_Splitter_01)
         self.torso_Layout.addWidget(self.torso_CreateBtn)
-        self.torso_Layout.addWidget(self.torso_Splitter)
+        self.torso_Layout.addWidget(self.torso_Splitter_01)
         self.tabWidget.addTab(self.torso_Tab, 'torso')
 
 
@@ -194,12 +208,13 @@ class CorrectiveBSUI(QtWidgets.QDialog):
         self.load_GridLayout = QtWidgets.QGridLayout()
         self.load_GridLayout.setSizeConstraint(QtWidgets.QLayout.SetDefaultConstraint)
         self.load_GridLayout.setContentsMargins(2, 2, 2, 2)
+        self.load_GridLayout.setVerticalSpacing(4)
         self.load_GridLayout.addWidget(self.baseGeo_Label,0,0,1,1)
         self.load_GridLayout.addWidget(self.baseGeo_LineEdit, 0, 1, 1, 4)
         self.load_GridLayout.addWidget(self.baseGeo_Btn, 0, 5, 1, 1)
-        self.load_GridLayout.addWidget(self.oriGeo_Label, 1, 0, 1, 1)
-        self.load_GridLayout.addWidget(self.oriGeo_LineEdit, 1, 1, 1, 4)
-        self.load_GridLayout.addWidget(self.oriGeo_Btn, 1, 5, 1, 1)
+        self.load_GridLayout.addWidget(self.targetGeo_Label, 1, 0, 1, 1)
+        self.load_GridLayout.addWidget(self.targetGeo_LineEdit, 1, 1, 1, 4)
+        self.load_GridLayout.addWidget(self.targetGeo_Btn, 1, 5, 1, 1)
         self.load_GridLayout.addWidget(self.blendshape_Label, 2, 0, 1, 1)
         self.load_GridLayout.addWidget(self.blendshape_comboBox, 2, 1, 1, 5)
         self.load_GridLayout.addWidget(self.add_Btn, 3, 4, 1, 1)
@@ -209,8 +224,8 @@ class CorrectiveBSUI(QtWidgets.QDialog):
         self.type_layout = QtWidgets.QHBoxLayout()
         self.type_layout.setContentsMargins(2,2,2,2)
         self.type_layout.addWidget(self.controlsType_Label)
-        # self.type_layout.addItem(self.spacerItem_01)
         self.type_layout.addWidget(self.adv_radioBtn)
+        self.type_layout.addWidget(self.humanIK_radioBtn)
         self.type_layout.addWidget(self.defined_radionBtn)
 
         # 创建sculpt布局
@@ -240,37 +255,111 @@ class CorrectiveBSUI(QtWidgets.QDialog):
         main_Layout.addWidget(self.copyRight_label)
 
     def create_connections(self):
-        pass
+        self.baseGeo_Btn.clicked.connect(self.click_BaseGeoLoad_Btn)
+        self.targetGeo_Btn.clicked.connect(self.click_targetGeoLoad_Btn)
+        self.add_Btn.clicked.connect(self.click_addBS_Btn)
+        self.del_Btn.clicked.connect(self.click_delBs_Btn)
+        self.sculpt_Btn.clicked.connect(self.click_sculpt_Btn)
+        self.mirror_Btn.clicked.connect(self.click_mirror_Btn)
+        self.exit_Btn.clicked.connect(self.click_exit_Btn)
+
+        self.arm_CreateBtn.clicked.connect(self.click_armCreate_Btn)
+        self.leg_CreateBtn.clicked.connect(self.click_legCreate_Btn)
+        self.finger_CreateBtn.clicked.connect(self.click_fingerCreate_Btn)
+        self.torso_CreateBtn.clicked.connect(self.click_torsoCreate_Btn)
+
 
     def click_BaseGeoLoad_Btn(self):
-        pass
+        baseGeo = tool.load_BaseGeo()
+        if baseGeo:
+            self.baseGeo_LineEdit.setText(str(baseGeo))
+            bsNode = tool.get_blendshape(baseGeo)
+            if bsNode:
+                self.blendshape_comboBox.addItem(bsNode[0])
 
-    def click_OriGeoLoad_Btn(self):
-        pass
+
+    def click_targetGeoLoad_Btn(self):
+        baseGeo = self.baseGeo_LineEdit.text()
+        if baseGeo:
+            targetGeo = tool.load_targetGeo(baseGeo)
+            if targetGeo:
+                self.targetGeo_LineEdit.setText(str(targetGeo))
+
 
     def click_addBS_Btn(self):
-        pass
+        baseGeo = self.baseGeo_LineEdit.text()
+        targetGeo = self.targetGeo_LineEdit.text()
+        # 检查对象身上是否已经存在blendShape
+        bsNode = tool.get_blendshape(baseGeo)
+        # 如果存在，弹出dialog提示已存在
+        if bsNode:
+            self.warningDialog()
+            bsNode = tool.add_blendShape(baseGeo,targetGeo)
+        else:
+            bsNode = tool.add_blendShape(baseGeo, targetGeo)
+
 
     def click_delBs_Btn(self):
-        pass
+        bsNode = self.blendshape_comboBox.currentText()
+        if bsNode:
+            tool.del_blendShape(bsNode)
+            self.blendshape_comboBox.clear()
+            om.MGlobal_displayInfo('QBJ_Tip : Delete blendShape Node successfully !')
+
 
     def click_armCreate_Btn(self):
+        print 'armCreate'
         pass
 
     def click_legCreate_Btn(self):
+        print 'legCreate'
         pass
 
     def click_fingerCreate_Btn(self):
+        print 'fingerCreate'
         pass
 
     def click_torsoCreate_Btn(self):
+        print 'torsoCreate'
         pass
 
     def click_sculpt_Btn(self):
+        print 'sculpt'
         pass
 
+
     def click_mirror_Btn(self):
+        print 'mirror'
         pass
 
     def click_exit_Btn(self):
+        print 'exit'
         pass
+
+
+    def warningDialog(self):
+        dialog = QtWidgets.QDialog(self)
+        dialog.setWindowTitle('Warning')
+        dialog.setFixedSize(180, 80)
+        main_Layout = QtWidgets.QVBoxLayout(dialog)
+        main_Layout.setContentsMargins(4,4,4,4)
+        label_Layout = QtWidgets.QVBoxLayout()
+        button_Layout = QtWidgets.QHBoxLayout()
+        button_Layout.setContentsMargins(2,2,2,2)
+        button_Layout.setSpacing(10)
+        confirm_Label_01 = QtWidgets.QLabel('already has blendShape !')
+        confirm_Label_01.setAlignment(QtCore.Qt.AlignCenter)
+        ok_Btn = QtWidgets.QPushButton('OK')
+        ok_Btn.setFixedSize(80,20)
+        ok_Btn.clicked.connect(dialog.close)
+        label_Layout.addWidget(confirm_Label_01)
+        button_Layout.addWidget(ok_Btn)
+        main_Layout.addLayout(label_Layout)
+        main_Layout.addLayout(button_Layout)
+        dialog.move(self.x() + 100, self.y() + 100)
+        dialog.exec_()
+
+
+
+
+
