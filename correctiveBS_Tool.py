@@ -1,7 +1,7 @@
 # .-*- coding: utf-8 -*-
 # .FileName:correctiveBS_Tool
 # .Date....:2022-03-21 : 11 :10
-# .Author..:Qian binjie
+# .Author..:Qian binJie
 # .Contact.:1075064966@qq.com
 '''
 launch :
@@ -44,23 +44,26 @@ class CorrectiveBsTool(object):
             if self.mesh_judge(baseGeo):
                 return baseGeo[0]
             else:
-                om.MGlobal_displayWarning('QBJ_Tip : Please select "polygon" ! ')
+                om.MGlobal_displayWarning('QBJ_Tip : Please select "polygon" !! ')
         else:
-            om.MGlobal_displayError('QBJ_Tip : Please select only one object !!! ')
+            om.MGlobal_displayWarning('QBJ_Tip : Please select only one object !! ')
 
 
-    def load_targetGeo(self,baseGeo):
+    def load_defaultTargetGeo(self,baseGeo):
         if baseGeo:
             targetGeo = baseGeo + '_target'
             if cmds.ls(targetGeo):
                 return targetGeo
+
+    def load_targetGeo(self):
+        targetGeo = cmds.ls(sl=True)
+        if len(targetGeo) == 1:
+            if self.mesh_judge(targetGeo):
+                return targetGeo[0]
             else:
-                targetGeo = cmds.ls(sl=True)
-                if len(targetGeo) == 1:
-                    if self.mesh_judge(targetGeo):
-                        return targetGeo[0]
-                else:
-                    om.MGlobal_displayError('QBJ_Tip : Please select only one object !!! ')
+                om.MGlobal_displayWarning('QBJ_Tip : Please select "polygon" !! ')
+        else:
+            om.MGlobal_displayWarning('QBJ_Tip : Please select only one object !! ')
 
 
     def get_blendshape(self,baseGeo):
@@ -73,18 +76,35 @@ class CorrectiveBsTool(object):
                 return None
 
 
-    def add_blendShape(self,targetGeo,baseGeo):
-        # 给baseGeo添加blendShape
-        if targetGeo and baseGeo:
-            blendShapeNode = cmds.blendShape(targetGeo,baseGeo,name='{}_bs'.format(baseGeo),frontOfChain=True,tc=True)
 
-            return blendShapeNode
+    def add_blendShape(self,baseGeo):
+        # 给baseGeo添加blendShape
+        if  baseGeo:
+            default_targetGeoName = baseGeo + '_target'
+            if self.load_defaultTargetGeo(baseGeo):
+                targetGeo = self.load_defaultTargetGeo(baseGeo)
+                if not self.get_blendshape(baseGeo):
+                    blendShapeNode = cmds.blendShape(baseGeo,
+                                                     name='{}_bs'.format(baseGeo),frontOfChain=True,tc=True)
+                    return default_targetGeoName,blendShapeNode
+            else:
+                targetGeoGrp = cmds.group(name ='{}_bsTarget_Grp'.format(baseGeo) , empty = True,world=True)
+                targetGeo = cmds.duplicate(baseGeo,name = '{}_target'.format(baseGeo))
+                cmds.parent(targetGeo,targetGeoGrp)
+                cmds.select(cl=True)
+                if not self.get_blendshape(baseGeo):
+                    blendShapeNode = cmds.blendShape( baseGeo,
+                                                     name='{}_bs'.format(baseGeo), frontOfChain=True, tc=True)
+                return targetGeo[0],blendShapeNode
 
 
     def del_blendShape(self,bs_node):
        if bs_node:
            cmds.delete(bs_node)
 
+    def del_targetGeo(self,targetGeo):
+        if targetGeo:
+            cmds.delete(targetGeo)
 
     def connect_to_poseGrp(self):
         pass

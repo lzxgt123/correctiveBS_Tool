@@ -9,7 +9,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>424</width>
+    <width>646</width>
     <height>764</height>
    </rect>
   </property>
@@ -41,7 +41,7 @@
     <item>
      <layout class="QGridLayout" name="gridLayout">
       <property name="sizeConstraint">
-       <enum>QLayout::SetDefaultConstraint</enum>
+       <enum>QLayout::SetFixedSize</enum>
       </property>
       <property name="leftMargin">
        <number>2</number>
@@ -55,10 +55,19 @@
       <property name="bottomMargin">
        <number>2</number>
       </property>
-      <item row="1" column="0">
-       <widget class="QLabel" name="oriGeo_Label_2">
+      <property name="verticalSpacing">
+       <number>4</number>
+      </property>
+      <item row="0" column="1" colspan="4">
+       <widget class="QLineEdit" name="baseGeo_LineEdit_2"/>
+      </item>
+      <item row="1" column="5">
+       <widget class="QPushButton" name="oriGeo_Btn_2">
+        <property name="styleSheet">
+         <string notr="true">background-color:rgb(142,188,255);color:black;</string>
+        </property>
         <property name="text">
-         <string>Ori Geo:</string>
+         <string>Load</string>
         </property>
        </widget>
       </item>
@@ -69,23 +78,20 @@
         </property>
        </widget>
       </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="oriGeo_Label_2">
+        <property name="text">
+         <string>Ori Geo:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1" colspan="4">
+       <widget class="QLineEdit" name="oriGeo_LineEdit_2"/>
+      </item>
       <item row="0" column="0">
        <widget class="QLabel" name="baseGeo_Label_2">
         <property name="text">
          <string>Base Geo:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="1" colspan="5">
-       <widget class="QComboBox" name="comboBox_2"/>
-      </item>
-      <item row="1" column="5">
-       <widget class="QPushButton" name="oriGeo_Btn_2">
-        <property name="styleSheet">
-         <string notr="true">background-color:rgb(142,188,255);color:black;</string>
-        </property>
-        <property name="text">
-         <string>Load</string>
         </property>
        </widget>
       </item>
@@ -99,32 +105,16 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="1" colspan="4">
-       <widget class="QLineEdit" name="baseGeo_LineEdit_2"/>
+      <item row="2" column="1" colspan="4">
+       <widget class="QComboBox" name="comboBox_2"/>
       </item>
-      <item row="1" column="1" colspan="4">
-       <widget class="QLineEdit" name="oriGeo_LineEdit_2"/>
-      </item>
-      <item row="3" column="1">
-       <layout class="QHBoxLayout" name="horizontalLayout_5"/>
-      </item>
-      <item row="3" column="5">
+      <item row="2" column="5">
        <widget class="QPushButton" name="pushButton_14">
         <property name="styleSheet">
          <string notr="true">background-color:rgb(142,188,255);color:black;</string>
         </property>
         <property name="text">
          <string>Del</string>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="4">
-       <widget class="QPushButton" name="pushButton_10">
-        <property name="styleSheet">
-         <string notr="true">background-color:rgb(142,188,255);color:black;</string>
-        </property>
-        <property name="text">
-         <string>Add</string>
         </property>
        </widget>
       </item>
@@ -221,7 +211,7 @@ QTabBar::tab{height:25}</string>
          <rect>
           <x>0</x>
           <y>0</y>
-          <width>404</width>
+          <width>412</width>
           <height>481</height>
          </rect>
         </property>

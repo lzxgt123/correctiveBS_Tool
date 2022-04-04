@@ -1,7 +1,7 @@
 # .-*- coding: utf-8 -*-
 # .FileName:correctiveBS_UI
 # .Date....:2022-03-21 : 11 :10
-# .Author..:Qian binjie
+# .Author..:Qian binJie
 # .Contact.:1075064966@qq.com
 '''
 launch :
@@ -19,7 +19,9 @@ from PySide2 import QtWidgets,QtCore,QtGui
 import correctiveBS_Tool as CBT
 reload(CBT)
 tool = CBT.CorrectiveBsTool()
-
+import confirmDialog as CD
+reload(CD)
+cd = CD.confirm_Dialog()
 
 def maya_main_window():
     '''
@@ -77,7 +79,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         # 创建加载blendShape 组件
         self.blendshape_Label = QtWidgets.QLabel('blendShape :')
         self.blendshape_comboBox = QtWidgets.QComboBox()
-        self.add_Btn = QtWidgets.QPushButton('Add')
+        # self.add_Btn = QtWidgets.QPushButton('Add')
         self.del_Btn = QtWidgets.QPushButton('Del')
 
         # 创建分割线 组件
@@ -177,6 +179,24 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.torso_Layout.addWidget(self.torso_Splitter_01)
         self.tabWidget.addTab(self.torso_Tab, 'torso')
 
+        self.other_Tab = QtWidgets.QWidget(self.tabWidget)
+        self.other_Layout = QtWidgets.QVBoxLayout(self.other_Tab)
+        self.other_Layout.setSizeConstraint(QtWidgets.QLayout.SetDefaultConstraint)
+        self.other_Layout.setContentsMargins(2, 2, 2, 2)
+        self.other_Layout.setSpacing(3)
+        self.other_CreateBtn = QtWidgets.QPushButton('Create Targets')
+        self.other_Splitter_01 = QtWidgets.QSplitter(self.other_Tab)
+        self.other_Splitter_01.setMinimumSize(QtCore.QSize(400, 0))
+        self.other_Splitter_01.setOrientation(QtCore.Qt.Vertical)
+        self.other_Splitter_02 = QtWidgets.QSplitter(self.other_Splitter_01)
+        self.other_Splitter_02.setOrientation(QtCore.Qt.Horizontal)
+        self.other_ListWidget_01 = QtWidgets.QListWidget(self.other_Splitter_02)
+        self.other_ListWidget_02 = QtWidgets.QListWidget(self.other_Splitter_02)
+        self.other_ListWidget_03 = QtWidgets.QListWidget(self.other_Splitter_01)
+        self.other_Layout.addWidget(self.other_CreateBtn)
+        self.other_Layout.addWidget(self.other_Splitter_01)
+        self.tabWidget.addTab(self.other_Tab, 'other')
+
 
         # 创建控制器旋转数值显示 组件
         self.rotate_Label = QtWidgets.QLabel('Rotate:')
@@ -216,9 +236,9 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.load_GridLayout.addWidget(self.targetGeo_LineEdit, 1, 1, 1, 4)
         self.load_GridLayout.addWidget(self.targetGeo_Btn, 1, 5, 1, 1)
         self.load_GridLayout.addWidget(self.blendshape_Label, 2, 0, 1, 1)
-        self.load_GridLayout.addWidget(self.blendshape_comboBox, 2, 1, 1, 5)
-        self.load_GridLayout.addWidget(self.add_Btn, 3, 4, 1, 1)
-        self.load_GridLayout.addWidget(self.del_Btn, 3, 5, 1, 1)
+        self.load_GridLayout.addWidget(self.blendshape_comboBox, 2, 1, 1, 4)
+        # self.load_GridLayout.addWidget(self.add_Btn, 3, 4, 1, 1)
+        self.load_GridLayout.addWidget(self.del_Btn, 2, 5, 1, 1)
 
         # 创建控制器类型 布局
         self.type_layout = QtWidgets.QHBoxLayout()
@@ -257,7 +277,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
     def create_connections(self):
         self.baseGeo_Btn.clicked.connect(self.click_BaseGeoLoad_Btn)
         self.targetGeo_Btn.clicked.connect(self.click_targetGeoLoad_Btn)
-        self.add_Btn.clicked.connect(self.click_addBS_Btn)
+        # self.add_Btn.clicked.connect(self.click_addBS_Btn)
         self.del_Btn.clicked.connect(self.click_delBs_Btn)
         self.sculpt_Btn.clicked.connect(self.click_sculpt_Btn)
         self.mirror_Btn.clicked.connect(self.click_mirror_Btn)
@@ -267,43 +287,66 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.leg_CreateBtn.clicked.connect(self.click_legCreate_Btn)
         self.finger_CreateBtn.clicked.connect(self.click_fingerCreate_Btn)
         self.torso_CreateBtn.clicked.connect(self.click_torsoCreate_Btn)
-
+        self.other_CreateBtn.clicked.connect(self.click_otherCreate_Btn)
 
     def click_BaseGeoLoad_Btn(self):
+        # 获取 baseGeo
         baseGeo = tool.load_BaseGeo()
+        # 将获取到的baseGeo名称，加载到baseGeo_LineEdit中
         if baseGeo:
             self.baseGeo_LineEdit.setText(str(baseGeo))
+            # 检查场景中是否存在targetGeo
+            if tool.load_defaultTargetGeo(baseGeo):
+                targetGeo = tool.load_defaultTargetGeo(baseGeo)
+                self.targetGeo_LineEdit.setText(str(targetGeo))
+
             bsNode = tool.get_blendshape(baseGeo)
+
             if bsNode:
-                self.blendshape_comboBox.addItem(bsNode[0])
+                if len(bsNode) == 1:
+                    self.blendshape_comboBox.addItem(bsNode[0])
+                else :
+                    om.MGlobal_displayError('QBJ_Tip : More than one blendShape node on the object !!!')
+                    return
+            else:
+                cd.addBlendShapeConfirmDialog(self.create_blendShape)
 
 
     def click_targetGeoLoad_Btn(self):
         baseGeo = self.baseGeo_LineEdit.text()
-        if baseGeo:
-            targetGeo = tool.load_targetGeo(baseGeo)
+        targetGeo = self.targetGeo_LineEdit.text()
+        if not targetGeo:
+            if baseGeo:
+                targetGeo = tool.load_defaultTargetGeo(baseGeo)
+                if targetGeo:
+                    self.targetGeo_LineEdit.setText(str(targetGeo))
+        else:
+            targetGeo = tool.load_targetGeo()
             if targetGeo:
                 self.targetGeo_LineEdit.setText(str(targetGeo))
 
 
-    def click_addBS_Btn(self):
-        baseGeo = self.baseGeo_LineEdit.text()
-        targetGeo = self.targetGeo_LineEdit.text()
-        # 检查对象身上是否已经存在blendShape
-        bsNode = tool.get_blendshape(baseGeo)
-        # 如果存在，弹出dialog提示已存在
-        if bsNode:
-            self.warningDialog()
-            bsNode = tool.add_blendShape(baseGeo,targetGeo)
-        else:
-            bsNode = tool.add_blendShape(baseGeo, targetGeo)
+    # def click_addBS_Btn(self):
+    #     baseGeo = self.baseGeo_LineEdit.text()
+    #     targetGeo = self.targetGeo_LineEdit.text()
+    #     # 检查对象身上是否已经存在blendShape
+    #     bsNode = tool.get_blendshape(baseGeo)
+    #     # 如果存在，弹出dialog提示已存在
+    #     if bsNode:
+    #         cd.addBlendShapeConfirmDialog()
+    #     else:
+    #         bsNode = tool.add_blendShape(baseGeo, targetGeo)
 
 
     def click_delBs_Btn(self):
         bsNode = self.blendshape_comboBox.currentText()
+        targetGeo = self.targetGeo_LineEdit.text()
         if bsNode:
             tool.del_blendShape(bsNode)
             self.blendshape_comboBox.clear()
+        if targetGeo:
+            tool.del_targetGeo(targetGeo)
+            self.targetGeo_LineEdit.clear()
             om.MGlobal_displayInfo('QBJ_Tip : Delete blendShape Node successfully !')
 
 
@@ -323,6 +366,11 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         print 'torsoCreate'
         pass
 
+    def click_otherCreate_Btn(self):
+        print 'otherCreate'
+        pass
+
+
     def click_sculpt_Btn(self):
         print 'sculpt'
         pass
@@ -337,27 +385,14 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         pass
 
 
-    def warningDialog(self):
-        dialog = QtWidgets.QDialog(self)
-        dialog.setWindowTitle('Warning')
-        dialog.setFixedSize(180, 80)
-        main_Layout = QtWidgets.QVBoxLayout(dialog)
-        main_Layout.setContentsMargins(4,4,4,4)
-        label_Layout = QtWidgets.QVBoxLayout()
-        button_Layout = QtWidgets.QHBoxLayout()
-        button_Layout.setContentsMargins(2,2,2,2)
-        button_Layout.setSpacing(10)
-        confirm_Label_01 = QtWidgets.QLabel('already has blendShape !')
-        confirm_Label_01.setAlignment(QtCore.Qt.AlignCenter)
-        ok_Btn = QtWidgets.QPushButton('OK')
-        ok_Btn.setFixedSize(80,20)
-        ok_Btn.clicked.connect(dialog.close)
-        label_Layout.addWidget(confirm_Label_01)
-        button_Layout.addWidget(ok_Btn)
-        main_Layout.addLayout(label_Layout)
-        main_Layout.addLayout(button_Layout)
-        dialog.move(self.x() + 100, self.y() + 100)
-        dialog.exec_()
+    def create_blendShape(self):
+        cd.addBlendShapeConfirm_Dialog.close()
+        baseGeo = self.baseGeo_LineEdit.text()
+        if baseGeo:
+            targetGeo_bsNode_list = tool.add_blendShape(baseGeo)
+            self.targetGeo_LineEdit.setText(str(targetGeo_bsNode_list[0]))
+            self.blendshape_comboBox.addItem(str(targetGeo_bsNode_list[1][0]))
+            om.MGlobal_displayInfo('QBJ_Tip : Add blendShape successfully !')
 
 
 
