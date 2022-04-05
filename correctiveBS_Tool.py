@@ -91,12 +91,13 @@ class CorrectiveBsTool(object):
             else:
                 targetGeoGrp = cmds.group(name ='{}_bsTarget_Grp'.format(baseGeo) , empty = True,world=True)
                 targetGeo = cmds.duplicate(baseGeo,name = '{}_target'.format(baseGeo))
+                cmds.setAttr('{}.vis'.format(targetGeo),0)
                 cmds.parent(targetGeo,targetGeoGrp)
                 cmds.select(cl=True)
                 if not self.get_blendshape(baseGeo):
                     blendShapeNode = cmds.blendShape( baseGeo,
                                                      name='{}_bs'.format(baseGeo), frontOfChain=True, tc=True)
-                return targetGeo[0],blendShapeNode
+                    return targetGeo[0],blendShapeNode
 
 
     def del_blendShape(self,bs_node):
@@ -109,10 +110,8 @@ class CorrectiveBsTool(object):
             cmds.delete(targetGeo)
 
 
-    def connect_to_poseGrp(self):
-        pass
-
     def create_armTargets(self,targetGeo):
+
         pass
 
     def create_legTargets(self,targetGeo):
@@ -122,4 +121,8 @@ class CorrectiveBsTool(object):
         pass
 
     def create_torsoTargets(self,targetGeo):
+        pass
+
+
+    def connect_to_poseGrp(self):
         pass

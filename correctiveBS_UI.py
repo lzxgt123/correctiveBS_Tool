@@ -37,6 +37,48 @@ class CorrectiveBsUI(QtWidgets.QDialog):
     WINDOW_TITLE = 'Corrective Tool v1.0.0'
     limitAngleExpr = QtCore.QRegExp('^-?(180|([1-9]?\d|1[0-7][0-9])(\.\d{1,2})?)$')
 
+    arm_Pose_dict = {
+                     'FKScapula_L':[u'-----肩胛-----', 'Scapula_L_Up', 'Scapula_L_Down', 'Scapula_L_Front', 'Scapula_L_Back'],
+                     'FKShoulder_L':[u'-----上臂-----', 'Shoulder_L_Up', 'Shoulder_L_Down', 'Shoulder_L_Front', 'Shoulder_L_Back',
+                     'Shoulder_L_UpFront', 'Shoulder_L_UpBack', 'Shoulder_L_DownFront', 'Shoulder_L_DownBack'],
+                     'FKElbow_L':[u'-----肘部-----', 'Elbow_L_Front'],
+                     'FKWrist_L':[u'-----手腕-----', 'Wrist_L_Up', 'Wrist_L_Down', 'Wrist_L_Front', 'Wrist_L_Back', 'Wrist_L_UpFront',
+                     'Wrist_L_UpBack', 'Wrist_L_DownFront', 'Wrist_L_DownBack']
+                     }
+
+    leg_Pose_dict = {
+                     'FKHip_L':[u'-----腿部-----', 'Hip_L_Up', 'Hip_L_Down', 'Hip_L_Front', 'Hip_L_Back',
+                     'Hip_L_UpFront', 'Hip_L_UpBack', 'Hip_L_DownFront', 'Hip_L_DownBack'],
+                     'FKKnee_L':[u'-----膝盖-----',  'Knee_L_Back'],
+                     'FKAnkle_L':[u'-----脚踝-----', 'Ankle_L_Up', 'Ankle_L_Down', 'Ankle_L_Front', 'Ankle_L_Back', 'Ankle_L_UpFront',
+                     'Ankle_L_UpBack', 'Ankle_L_DownFront', 'Ankle_L_DownBack']
+                     }
+
+    finger_pose_dict = {
+                        'FKIndexFinger1_L':[u'-----食指-----', 'IndexFinger1_L_Down', 'IndexFinger1_L_Up'],
+                        'FKIndexFinger2_L': [ 'IndexFinger2_L_Down', 'IndexFinger2_L_Up'],
+                        'FKIndexFinger3_L': [ 'IndexFinger3_L_Down', 'IndexFinger3_L_Up'],
+                        'FKMiddleFinger1_L':[u'-----中指-----', 'MiddleFinger1_L_Down','MiddleFinger1_L_Up'],
+                        'FKMiddleFinger2_L': [ 'MiddleFinger2_L_Down', 'MiddleFinger2_L_Up'],
+                        'FKMiddleFinger3_L': [ 'MiddleFinger3_L_Down', 'MiddleFinger3_L_Up'],
+                        'FKRingFinger1_L':[u'-----无名指-----', 'RingFinger1_L_Down','RingFinger1_L_Up'],
+                        'FKRingFinger2_L': ['RingFinger2_L_Down', 'RingFinger2_L_Up'],
+                        'FKRingFinger3_L': ['RingFinger3_L_Down', 'RingFinger3_L_Up'],
+                        'FKPinkyFinger1_L':[u'-----小拇指-----', 'PinkyFinger1_L_Down','PinkyFinger1_L_Up'],
+                        'FKPinkyFinger2_L': [ 'PinkyFinger2_L_Down', 'PinkyFinger2_L_Up'],
+                        'FKPinkyFinger3_L': [ 'PinkyFinger3_L_Down', 'PinkyFinger3_L_Up'],
+                        'FKThumbFinger1_L':[u'-----大拇指-----', 'ThumbFinger1_L_Down','ThumbFinger1_L_Up'],
+                        'FKThumbFinger2_L': [ 'ThumbFinger2_L_Down', 'ThumbFinger2_L_Up'],
+                        'FKThumbFinger3_L': [ 'ThumbFinger3_L_Down', 'ThumbFinger3_L_Up']
+                        }
+
+    torso_pose_dict = {
+                        'FKHead_M':[u'-----头部-----','Head_Front','Head_Back','Head_Left','Head_Right'],
+                        'FKNeck_M':[u'-----颈部-----', 'Neck_Front', 'Neck_Back', 'Neck_Left', 'Neck_Right'],
+                        'FKChest_M':[u'-----胸腔-----','Chest_Front', 'Chest_Back', 'Chest_Left', 'Chest_Right'],
+                        'FKSpine1_M':[u'-----躯干-----','Spine1_Front', 'Spine1_Back', 'Spine1_Left', 'Spine1_Right'],
+                        'FKSpine2_M':['Spine2_Front', 'Spine2_Back', 'Spine2_Left', 'Spine2_Right']
+                        }
 
     def __init__(self,parent=maya_main_window()):
         super(CorrectiveBsUI, self).__init__(parent)
@@ -121,6 +163,8 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.arm_ListWidget_01 = QtWidgets.QListWidget(self.arm_Splitter_02)
         self.arm_ListWidget_02 = QtWidgets.QListWidget(self.arm_Splitter_02)
         self.arm_ListWidget_03 = QtWidgets.QListWidget(self.arm_Splitter_01)
+        self.arm_Splitter_01.setStretchFactor(0, 8)
+        self.arm_Splitter_01.setStretchFactor(1, 2)
         self.arm_Layout.addWidget(self.arm_CreateBtn)
         self.arm_Layout.addWidget(self.arm_Splitter_01)
         self.tabWidget.addTab(self.arm_Tab,'Arm')
@@ -139,6 +183,8 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.leg_ListWidget_01 = QtWidgets.QListWidget(self.leg_Splitter_02)
         self.leg_ListWidget_02 = QtWidgets.QListWidget(self.leg_Splitter_02)
         self.leg_ListWidget_03 = QtWidgets.QListWidget(self.leg_Splitter_01)
+        self.leg_Splitter_01.setStretchFactor(0, 8)
+        self.leg_Splitter_01.setStretchFactor(1, 2)
         self.leg_Layout.addWidget(self.leg_CreateBtn)
         self.leg_Layout.addWidget(self.leg_Splitter_01)
         self.tabWidget.addTab(self.leg_Tab, 'leg')
@@ -157,6 +203,8 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.finger_ListWidget_01 = QtWidgets.QListWidget(self.finger_Splitter_02)
         self.finger_ListWidget_02 = QtWidgets.QListWidget(self.finger_Splitter_02)
         self.finger_ListWidget_03 = QtWidgets.QListWidget(self.finger_Splitter_01)
+        self.finger_Splitter_01.setStretchFactor(0, 8)
+        self.finger_Splitter_01.setStretchFactor(1, 2)
         self.finger_Layout.addWidget(self.finger_CreateBtn)
         self.finger_Layout.addWidget(self.finger_Splitter_01)
         self.tabWidget.addTab(self.finger_Tab, 'finger')
@@ -175,6 +223,8 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.torso_ListWidget_01 = QtWidgets.QListWidget(self.torso_Splitter_02)
         self.torso_ListWidget_02 = QtWidgets.QListWidget(self.torso_Splitter_02)
         self.torso_ListWidget_03 = QtWidgets.QListWidget(self.torso_Splitter_01)
+        self.torso_Splitter_01.setStretchFactor(0, 8)
+        self.torso_Splitter_01.setStretchFactor(1, 2)
         self.torso_Layout.addWidget(self.torso_CreateBtn)
         self.torso_Layout.addWidget(self.torso_Splitter_01)
         self.tabWidget.addTab(self.torso_Tab, 'torso')
@@ -193,6 +243,8 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.other_ListWidget_01 = QtWidgets.QListWidget(self.other_Splitter_02)
         self.other_ListWidget_02 = QtWidgets.QListWidget(self.other_Splitter_02)
         self.other_ListWidget_03 = QtWidgets.QListWidget(self.other_Splitter_01)
+        self.other_Splitter_01.setStretchFactor(0, 8)
+        self.other_Splitter_01.setStretchFactor(1, 2)
         self.other_Layout.addWidget(self.other_CreateBtn)
         self.other_Layout.addWidget(self.other_Splitter_01)
         self.tabWidget.addTab(self.other_Tab, 'other')
@@ -325,7 +377,6 @@ class CorrectiveBsUI(QtWidgets.QDialog):
             cd.loadTargetConfirmDialog(self.changeTargetGeo)
 
 
-
     def click_delBs_Btn(self):
         bsNode = self.blendshape_comboBox.currentText()
         targetGeo = self.targetGeo_LineEdit.text()
@@ -340,7 +391,8 @@ class CorrectiveBsUI(QtWidgets.QDialog):
 
     def click_armCreate_Btn(self):
         print 'armCreate'
-        pass
+
+
 
     def click_legCreate_Btn(self):
         print 'legCreate'
