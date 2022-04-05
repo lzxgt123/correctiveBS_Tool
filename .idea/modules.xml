@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/correctiveBS.iml" filepath="$PROJECT_DIR$/.idea/correctiveBS.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/correctiveBS_Tool.iml" filepath="$PROJECT_DIR$/.idea/correctiveBS_Tool.iml" />
     </modules>
   </component>
 </project>

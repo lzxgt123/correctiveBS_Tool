@@ -289,6 +289,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.torso_CreateBtn.clicked.connect(self.click_torsoCreate_Btn)
         self.other_CreateBtn.clicked.connect(self.click_otherCreate_Btn)
 
+
     def click_BaseGeoLoad_Btn(self):
         # 获取 baseGeo
         baseGeo = tool.load_BaseGeo()
@@ -296,8 +297,8 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         if baseGeo:
             self.baseGeo_LineEdit.setText(str(baseGeo))
             # 检查场景中是否存在targetGeo
-            if tool.load_defaultTargetGeo(baseGeo):
-                targetGeo = tool.load_defaultTargetGeo(baseGeo)
+            if tool.return_defaultTargetGeo(baseGeo):
+                targetGeo = tool.return_defaultTargetGeo(baseGeo)
                 self.targetGeo_LineEdit.setText(str(targetGeo))
 
             bsNode = tool.get_blendshape(baseGeo)
@@ -317,25 +318,12 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         targetGeo = self.targetGeo_LineEdit.text()
         if not targetGeo:
             if baseGeo:
-                targetGeo = tool.load_defaultTargetGeo(baseGeo)
+                targetGeo = tool.return_defaultTargetGeo(baseGeo)
                 if targetGeo:
                     self.targetGeo_LineEdit.setText(str(targetGeo))
         else:
-            targetGeo = tool.load_targetGeo()
-            if targetGeo:
-                self.targetGeo_LineEdit.setText(str(targetGeo))
+            cd.loadTargetConfirmDialog(self.changeTargetGeo)
 
-
-    # def click_addBS_Btn(self):
-    #     baseGeo = self.baseGeo_LineEdit.text()
-    #     targetGeo = self.targetGeo_LineEdit.text()
-    #     # 检查对象身上是否已经存在blendShape
-    #     bsNode = tool.get_blendshape(baseGeo)
-    #     # 如果存在，弹出dialog提示已存在
-    #     if bsNode:
-    #         cd.addBlendShapeConfirmDialog()
-    #     else:
-    #         bsNode = tool.add_blendShape(baseGeo, targetGeo)
 
 
     def click_delBs_Btn(self):
@@ -380,13 +368,14 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         print 'mirror'
         pass
 
+
     def click_exit_Btn(self):
         print 'exit'
         pass
 
 
     def create_blendShape(self):
-        cd.addBlendShapeConfirm_Dialog.close()
+        # 为 baseGeo 创建blendShape，并将生成的target和bsNode加载到Gui中
         baseGeo = self.baseGeo_LineEdit.text()
         if baseGeo:
             targetGeo_bsNode_list = tool.add_blendShape(baseGeo)
@@ -394,7 +383,14 @@ class CorrectiveBsUI(QtWidgets.QDialog):
             self.blendshape_comboBox.addItem(str(targetGeo_bsNode_list[1][0]))
             om.MGlobal_displayInfo('QBJ_Tip : Add blendShape successfully !')
 
+        cd.addBlendShapeConfirm_Dialog.close()
 
 
+    def changeTargetGeo(self):
+        # 将targetGeo_LineEdit的名称 ，替换为此时用户选中的模型名称
+        targetGeo = tool.load_targetGeo()
+        if targetGeo:
+            self.targetGeo_LineEdit.setText(str(targetGeo))
 
+        cd.loadTargetConfirm_Dialog.close()
 

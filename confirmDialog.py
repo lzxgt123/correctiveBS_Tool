@@ -29,7 +29,7 @@ class confirm_Dialog(QtWidgets.QDialog):
 
 
     def addBlendShapeConfirmDialog(self,yesCommand):
-        self.addBlendShapeConfirm_Dialog = QtWidgets.QDialog(self)
+        self.addBlendShapeConfirm_Dialog = QtWidgets.QDialog()
         self.addBlendShapeConfirm_Dialog.setWindowTitle('Add blendShape')
         self.addBlendShapeConfirm_Dialog.setFixedSize(200, 80)
         main_Layout = QtWidgets.QVBoxLayout(self.addBlendShapeConfirm_Dialog)
@@ -54,13 +54,34 @@ class confirm_Dialog(QtWidgets.QDialog):
         button_Layout.addWidget(No_Btn)
         main_Layout.addLayout(label_Layout)
         main_Layout.addLayout(button_Layout)
-        # self.addBlendShapeConfirm_Dialog.move(self.x() + 800, self.y() + 400)
         self.addBlendShapeConfirm_Dialog.exec_()
 
 
-    def loadTargetConfirmDialog(self):
-        loadTargetConfirmDialog = QtWidgets.QDialog(self)
-        loadTargetConfirmDialog.setWindowTitle('Load target')
-        loadTargetConfirmDialog.setFixedSize(200, 80)
+    def loadTargetConfirmDialog(self,yesCommand):
+        self.loadTargetConfirm_Dialog = QtWidgets.QDialog()
+        self.loadTargetConfirm_Dialog.setWindowTitle('Load target')
+        self.loadTargetConfirm_Dialog.setFixedSize(200, 80)
+        main_Layout = QtWidgets.QVBoxLayout(self.loadTargetConfirm_Dialog)
+        main_Layout.setContentsMargins(4, 4, 4, 4)
+        label_Layout = QtWidgets.QVBoxLayout()
+        button_Layout = QtWidgets.QHBoxLayout()
+        button_Layout.setContentsMargins(2, 2, 2, 2)
+        button_Layout.setSpacing(10)
+        confirm_Label_01 = QtWidgets.QLabel("Already have target Geo ,")
+        confirm_Label_01.setAlignment(QtCore.Qt.AlignCenter)
+        confirm_Label_02 = QtWidgets.QLabel("Change or not ?")
+        confirm_Label_02.setAlignment(QtCore.Qt.AlignCenter)
+        yes_Btn = QtWidgets.QPushButton('Yes')
+        yes_Btn.setFixedSize(80, 20)
+        No_Btn = QtWidgets.QPushButton('No')
+        No_Btn.setFixedSize(80, 20)
+        yes_Btn.clicked.connect(yesCommand)
+        No_Btn.clicked.connect(self.loadTargetConfirm_Dialog.close)
+        label_Layout.addWidget(confirm_Label_01)
+        label_Layout.addWidget(confirm_Label_02)
+        button_Layout.addWidget(yes_Btn)
+        button_Layout.addWidget(No_Btn)
+        main_Layout.addLayout(label_Layout)
+        main_Layout.addLayout(button_Layout)
+        self.loadTargetConfirm_Dialog.exec_()
 
-        pass

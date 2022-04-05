@@ -49,11 +49,12 @@ class CorrectiveBsTool(object):
             om.MGlobal_displayWarning('QBJ_Tip : Please select only one object !! ')
 
 
-    def load_defaultTargetGeo(self,baseGeo):
+    def return_defaultTargetGeo(self,baseGeo):
         if baseGeo:
             targetGeo = baseGeo + '_target'
             if cmds.ls(targetGeo):
                 return targetGeo
+
 
     def load_targetGeo(self):
         targetGeo = cmds.ls(sl=True)
@@ -81,8 +82,8 @@ class CorrectiveBsTool(object):
         # 给baseGeo添加blendShape
         if  baseGeo:
             default_targetGeoName = baseGeo + '_target'
-            if self.load_defaultTargetGeo(baseGeo):
-                targetGeo = self.load_defaultTargetGeo(baseGeo)
+            if self.return_defaultTargetGeo(baseGeo):
+                targetGeo = self.return_defaultTargetGeo(baseGeo)
                 if not self.get_blendshape(baseGeo):
                     blendShapeNode = cmds.blendShape(baseGeo,
                                                      name='{}_bs'.format(baseGeo),frontOfChain=True,tc=True)
@@ -102,9 +103,11 @@ class CorrectiveBsTool(object):
        if bs_node:
            cmds.delete(bs_node)
 
+
     def del_targetGeo(self,targetGeo):
         if targetGeo:
             cmds.delete(targetGeo)
+
 
     def connect_to_poseGrp(self):
         pass
