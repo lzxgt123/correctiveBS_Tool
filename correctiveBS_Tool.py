@@ -18,7 +18,6 @@ class CorrectiveBsTool(object):
     def __init__(self):
         pass
 
-
     def mesh_judge(self,object):
         '''
         :param object: 需要被判断的对象
@@ -36,7 +35,6 @@ class CorrectiveBsTool(object):
 
     def load_BaseGeo(self):
         u'''
-
         :return: 返回选择的polygon 名称
         '''
         baseGeo = cmds.ls(sl=True)
@@ -110,17 +108,17 @@ class CorrectiveBsTool(object):
             cmds.delete(targetGeo)
 
 
-    def create_armTargets(self,targetGeo):
+    def create_armTargets(self,targetGeo,rigSystem):
 
         pass
 
-    def create_legTargets(self,targetGeo):
+    def create_legTargets(self,targetGeo,rigSystem):
         pass
 
-    def create_fingerTargets(self,targetGeo):
+    def create_fingerTargets(self,targetGeo,rigSystem):
         pass
 
-    def create_torsoTargets(self,targetGeo):
+    def create_torsoTargets(self,targetGeo,rigSystem):
         pass
 
 
