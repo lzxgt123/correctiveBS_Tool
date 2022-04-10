@@ -9,7 +9,6 @@ launch :
         reload(QBJ_correctiveBS_UI)
 '''
 
-
 import pymel.core as pm
 import maya.OpenMaya as om
 import maya.cmds as cmds
@@ -19,6 +18,16 @@ from PySide2 import QtWidgets,QtCore,QtGui
 import correctiveBS_Tool as CBT
 reload(CBT)
 tool = CBT.CorrectiveBsTool()
+import system.advSystem as ADV
+reload(ADV)
+adv = ADV.advSystem()
+import system.humanikSystem as HUMANIK
+reload(HUMANIK)
+humanik = HUMANIK.humanIKSystem()
+import system.userDefinedSystem as UESR
+reload(UESR)
+user = UESR.userDedinedSystem()
+
 
 
 def maya_main_window():
@@ -91,6 +100,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.adv_radioBtn = QtWidgets.QRadioButton('ADV')
         self.adv_radioBtn.setChecked(True)
         self.humanIK_radioBtn = QtWidgets.QRadioButton('HumanIK')
+        self.humanIK_radioBtn.setEnabled(False)
         self.defined_radionBtn = QtWidgets.QRadioButton('Defined')
         self.defined_radionBtn.setEnabled(False)
 
@@ -345,27 +355,90 @@ class CorrectiveBsUI(QtWidgets.QDialog):
 
 
     def click_armCreate_Btn(self):
+        baseGeo = self.baseGeo_LineEdit.text()
+        targetGeo = self.targetGeo_LineEdit.text()
+        blendShapeNode = self.blendshape_comboBox.currentText()
+        currectSysytem = self.radionBtn_Grp.checkedButton().text()
+
+        # 将poseGrp添加到arm_ListWidget_01中
+        self.arm_ListWidget_01.clear()
+        if currectSysytem == 'ADV':
+            self.add_ListWidget_01_items(adv.arm_ADV_poseDict,self.arm_ListWidget_01,self.arm_CreateBtn)
+
+            # 根据adv控制器的命名规则，创建poseBridge组并进行连接
+            adv.create_armPoseBrige()
+
+            # 生成blendShape targetGeo，并添加到blendShapeNode中
+            adv.create_armTargets(baseGeo,targetGeo,blendShapeNode)
 
         print 'armCreate'
 
 
-
     def click_legCreate_Btn(self):
+        baseGeo = self.baseGeo_LineEdit.text()
+        targetGeo = self.targetGeo_LineEdit.text()
+        blendShapeNode = self.blendshape_comboBox.currentText()
+        currectSysytem = self.radionBtn_Grp.checkedButton().text()
+
+        # 将poseGrp添加到arm_ListWidget_01中
+        self.leg_ListWidget_01.clear()
+        if currectSysytem == 'ADV':
+            self.add_ListWidget_01_items(adv.leg_ADV_poseDict,self.leg_ListWidget_01,self.leg_CreateBtn)
+
+            # 根据adv控制器的命名规则，创建poseBridge组并进行连接
+            adv.create_legPoseBrige()
+
+            # 生成blendShape targetGeo，并添加到blendShapeNode中
+            adv.create_legTargets(baseGeo, targetGeo, blendShapeNode)
+
         print 'legCreate'
-        pass
+
 
     def click_fingerCreate_Btn(self):
+        baseGeo = self.baseGeo_LineEdit.text()
+        targetGeo = self.targetGeo_LineEdit.text()
+        blendShapeNode = self.blendshape_comboBox.currentText()
+        currectSysytem = self.radionBtn_Grp.checkedButton().text()
+
+        # 将poseGrp添加到arm_ListWidget_01中
+        self.finger_ListWidget_01.clear()
+        if currectSysytem == 'ADV':
+            self.add_ListWidget_01_items(adv.finger_ADV_poseDict,self.finger_ListWidget_01,self.finger_CreateBtn)
+
+            # 根据adv控制器的命名规则，创建poseBridge组并进行连接
+            adv.create_fingerPoseBrige()
+
+            # 生成blendShape targetGeo，并添加到blendShapeNode中
+            adv.create_fingerTargets(baseGeo, targetGeo, blendShapeNode)
+
         print 'fingerCreate'
-        pass
+
 
     def click_torsoCreate_Btn(self):
+
+        baseGeo = self.baseGeo_LineEdit.text()
+        targetGeo = self.targetGeo_LineEdit.text()
+        blendShapeNode = self.blendshape_comboBox.currentText()
+        currectSysytem = self.radionBtn_Grp.checkedButton().text()
+
+        # 将poseGrp添加到arm_ListWidget_01中
+        self.torso_ListWidget_01.clear()
+        if currectSysytem == 'ADV':
+            self.add_ListWidget_01_items(adv.torso_ADV_poseDict,self.torso_ListWidget_01,self.torso_CreateBtn)
+
+            # 根据adv控制器的命名规则，创建poseBridge组并进行连接
+            adv.create_torsoPoseBrige()
+
+            # 生成blendShape targetGeo，并添加到blendShapeNode中
+            adv.create_torsoTargets(baseGeo, targetGeo, blendShapeNode)
+
         print 'torsoCreate'
+
         pass
 
     def click_otherCreate_Btn(self):
         print 'otherCreate'
         pass
-
 
     def click_sculpt_Btn(self):
         print 'sculpt'
@@ -412,3 +485,13 @@ class CorrectiveBsUI(QtWidgets.QDialog):
             'Yes', 'No'], defaultButton='Yes', cancelButton='No', dismissString='No')
         if result == 'Yes':
             self.changeTargetGeo()
+
+
+    def add_ListWidget_01_items(self,poseDict,listWidget,button):
+        for ctrl, poseGrp in poseDict.items():
+            if cmds.objExists(ctrl):
+                for pose in poseGrp:
+                    listWidget.addItem(pose)
+
+        button.setStyleSheet(self.BUTTON_BGC)
+        button.setEnabled(False)

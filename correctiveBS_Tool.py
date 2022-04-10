@@ -13,6 +13,11 @@ import maya.cmds as cmds
 import maya.OpenMaya as om
 import system.advSystem as adv
 reload(adv)
+import system.humanikSystem as humanik
+reload(humanik)
+import system.userDefinedSystem as user
+reload(user)
+
 
 class CorrectiveBsTool(object):
 
@@ -90,7 +95,7 @@ class CorrectiveBsTool(object):
                 targetGeoGrp = cmds.group(name ='{}_bsTarget_Grp'.format(baseGeo) , empty = True,world=True)
                 targetGeo = cmds.duplicate(baseGeo,name = '{}_target'.format(baseGeo))
                 cmds.parent(targetGeo, targetGeoGrp)
-                cmds.setAttr('{}.vis'.format(targetGeo[0]),0)
+                cmds.setAttr('{}.v'.format(targetGeo[0]),0)
                 cmds.select(cl=True)
                 if not self.get_blendshape(baseGeo):
                     blendShapeNode = cmds.blendShape( baseGeo,
@@ -108,19 +113,19 @@ class CorrectiveBsTool(object):
             cmds.delete(targetGeo)
 
 
-    def create_armTargets(self,targetGeo):
-
-        pass
-
-    def create_legTargets(self,targetGeo):
-        pass
-
-    def create_fingerTargets(self,targetGeo):
-        pass
-
-    def create_torsoTargets(self,targetGeo):
-        pass
-
-
-    def connect_to_poseGrp(self):
-        pass
+    # def create_armTargets(self,targetGeo):
+    #
+    #     pass
+    #
+    # def create_legTargets(self,targetGeo):
+    #     pass
+    #
+    # def create_fingerTargets(self,targetGeo):
+    #     pass
+    #
+    # def create_torsoTargets(self,targetGeo):
+    #     pass
+    #
+    #
+    # def connect_to_poseGrp(self):
+    #     pass
