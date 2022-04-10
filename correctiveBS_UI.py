@@ -19,9 +19,7 @@ from PySide2 import QtWidgets,QtCore,QtGui
 import correctiveBS_Tool as CBT
 reload(CBT)
 tool = CBT.CorrectiveBsTool()
-import confirmDialog as CD
-reload(CD)
-cd = CD.confirm_Dialog()
+
 
 def maya_main_window():
     '''
@@ -319,7 +317,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
                     om.MGlobal_displayError('QBJ_Tip : More than one blendShape node on the object !!!')
                     return
             else:
-                cd.addBlendShapeConfirmDialog(self.create_blendShape)
+                self.addBlendShapeConfirmDialog()
 
 
     def click_targetGeoLoad_Btn(self):
@@ -331,7 +329,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
                 if targetGeo:
                     self.targetGeo_LineEdit.setText(str(targetGeo))
         else:
-            cd.loadTargetConfirmDialog(self.changeTargetGeo)
+            self.loadTargetConfirmDialog()
 
 
     def click_delBs_Btn(self):
@@ -347,6 +345,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
 
 
     def click_armCreate_Btn(self):
+
         print 'armCreate'
 
 
@@ -392,8 +391,6 @@ class CorrectiveBsUI(QtWidgets.QDialog):
             self.blendshape_comboBox.addItem(str(targetGeo_bsNode_list[1][0]))
             om.MGlobal_displayInfo('QBJ_Tip : Add blendShape successfully !')
 
-        cd.addBlendShapeConfirm_Dialog.close()
-
 
     def changeTargetGeo(self):
         # 将targetGeo_LineEdit的名称 ，替换为此时用户选中的模型名称
@@ -401,5 +398,17 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         if targetGeo:
             self.targetGeo_LineEdit.setText(str(targetGeo))
 
-        cd.loadTargetConfirm_Dialog.close()
 
+
+    def addBlendShapeConfirmDialog(self):
+        result = pm.confirmDialog(title="Add blendShape", message="Can't find blendShape Node , Add or not ?", button=[
+            'Yes', 'No'], defaultButton='Yes', cancelButton='No', dismissString='No')
+        if result == 'Yes':
+            self.create_blendShape()
+
+
+    def loadTargetConfirmDialog(self):
+        result = pm.confirmDialog(title="Load target", message="Already have target Geo , Change or not ?", button=[
+            'Yes', 'No'], defaultButton='Yes', cancelButton='No', dismissString='No')
+        if result == 'Yes':
+            self.changeTargetGeo()

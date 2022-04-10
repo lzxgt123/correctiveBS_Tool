@@ -54,6 +54,9 @@ class advSystem(object):
         'FKSpine2_M': ['Spine2_Front', 'Spine2_Back', 'Spine2_Left', 'Spine2_Right']
     }
 
-
     def __init__(self):
         pass
+
+    def create_armTargets(self,baseGeo,targetGeo):
+        pass
+

@@ -11,7 +11,8 @@ launch :
 
 import maya.cmds as cmds
 import maya.OpenMaya as om
-
+import system.advSystem as adv
+reload(adv)
 
 class CorrectiveBsTool(object):
 
@@ -75,7 +76,6 @@ class CorrectiveBsTool(object):
                 return None
 
 
-
     def add_blendShape(self,baseGeo):
         # 给baseGeo添加blendShape
         if  baseGeo:
@@ -89,8 +89,8 @@ class CorrectiveBsTool(object):
             else:
                 targetGeoGrp = cmds.group(name ='{}_bsTarget_Grp'.format(baseGeo) , empty = True,world=True)
                 targetGeo = cmds.duplicate(baseGeo,name = '{}_target'.format(baseGeo))
-                cmds.setAttr('{}.vis'.format(targetGeo),0)
-                cmds.parent(targetGeo,targetGeoGrp)
+                cmds.parent(targetGeo, targetGeoGrp)
+                cmds.setAttr('{}.vis'.format(targetGeo[0]),0)
                 cmds.select(cl=True)
                 if not self.get_blendshape(baseGeo):
                     blendShapeNode = cmds.blendShape( baseGeo,
@@ -108,17 +108,17 @@ class CorrectiveBsTool(object):
             cmds.delete(targetGeo)
 
 
-    def create_armTargets(self,targetGeo,rigSystem):
+    def create_armTargets(self,targetGeo):
 
         pass
 
-    def create_legTargets(self,targetGeo,rigSystem):
+    def create_legTargets(self,targetGeo):
         pass
 
-    def create_fingerTargets(self,targetGeo,rigSystem):
+    def create_fingerTargets(self,targetGeo):
         pass
 
-    def create_torsoTargets(self,targetGeo,rigSystem):
+    def create_torsoTargets(self,targetGeo):
         pass
 
 

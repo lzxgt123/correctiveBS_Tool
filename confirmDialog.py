@@ -57,6 +57,7 @@ class confirm_Dialog(QtWidgets.QDialog):
         self.addBlendShapeConfirm_Dialog.exec_()
 
 
+
     def loadTargetConfirmDialog(self,yesCommand):
         self.loadTargetConfirm_Dialog = QtWidgets.QDialog()
         self.loadTargetConfirm_Dialog.setWindowTitle('Load target')
