@@ -236,7 +236,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
 
         # 创建版权申明
         self.copyRight_label = QtWidgets.QLabel()
-        self.copyRight_label.setText('Copyright(C) 2022 Rigging | QBJ')
+        self.copyRight_label.setText('Copyright(C) 2022—— Rigging | QBJ')
         self.copyRight_label.setAlignment(QtCore.Qt.AlignCenter)
 
 
@@ -363,13 +363,15 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         # 将poseGrp添加到arm_ListWidget_01中
         self.arm_ListWidget_01.clear()
         if currectSysytem == 'ADV':
-            self.add_ListWidget_01_items(adv.arm_ADV_poseDict,self.arm_ListWidget_01,self.arm_CreateBtn)
+            self.add_ListWidget_01_items(adv.arm_ADV_poseDict,self.arm_ListWidget_01)
 
             # 根据adv控制器的命名规则，创建poseBridge组并进行连接
             adv.create_armPoseBrige()
 
             # 生成blendShape targetGeo，并添加到blendShapeNode中
-            adv.create_armTargets(baseGeo,targetGeo,blendShapeNode)
+            if adv.create_armTargets(baseGeo,targetGeo,blendShapeNode):
+                self.arm_CreateBtn.setStyleSheet(self.BUTTON_BGC)
+                self.arm_CreateBtn.setEnabled(False)
 
         print 'armCreate'
 
@@ -383,13 +385,15 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         # 将poseGrp添加到arm_ListWidget_01中
         self.leg_ListWidget_01.clear()
         if currectSysytem == 'ADV':
-            self.add_ListWidget_01_items(adv.leg_ADV_poseDict,self.leg_ListWidget_01,self.leg_CreateBtn)
+            self.add_ListWidget_01_items(adv.leg_ADV_poseDict,self.leg_ListWidget_01)
 
             # 根据adv控制器的命名规则，创建poseBridge组并进行连接
             adv.create_legPoseBrige()
 
             # 生成blendShape targetGeo，并添加到blendShapeNode中
-            adv.create_legTargets(baseGeo, targetGeo, blendShapeNode)
+            if adv.create_legTargets(baseGeo, targetGeo, blendShapeNode):
+                self.leg_CreateBtn.setStyleSheet(self.BUTTON_BGC)
+                self.leg_CreateBtn.setEnabled(False)
 
         print 'legCreate'
 
@@ -403,13 +407,12 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         # 将poseGrp添加到arm_ListWidget_01中
         self.finger_ListWidget_01.clear()
         if currectSysytem == 'ADV':
-            self.add_ListWidget_01_items(adv.finger_ADV_poseDict,self.finger_ListWidget_01,self.finger_CreateBtn)
-
-            # 根据adv控制器的命名规则，创建poseBridge组并进行连接
-            adv.create_fingerPoseBrige()
+            self.add_ListWidget_01_items(adv.finger_ADV_poseDict,self.finger_ListWidget_01)
 
             # 生成blendShape targetGeo，并添加到blendShapeNode中
-            adv.create_fingerTargets(baseGeo, targetGeo, blendShapeNode)
+            if adv.create_fingerTargets(baseGeo, targetGeo, blendShapeNode):
+                self.finger_CreateBtn.setStyleSheet(self.BUTTON_BGC)
+                self.finger_CreateBtn.setEnabled(False)
 
         print 'fingerCreate'
 
@@ -424,17 +427,19 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         # 将poseGrp添加到arm_ListWidget_01中
         self.torso_ListWidget_01.clear()
         if currectSysytem == 'ADV':
-            self.add_ListWidget_01_items(adv.torso_ADV_poseDict,self.torso_ListWidget_01,self.torso_CreateBtn)
+            self.add_ListWidget_01_items(adv.torso_ADV_poseDict,self.torso_ListWidget_01)
 
             # 根据adv控制器的命名规则，创建poseBridge组并进行连接
             adv.create_torsoPoseBrige()
 
             # 生成blendShape targetGeo，并添加到blendShapeNode中
-            adv.create_torsoTargets(baseGeo, targetGeo, blendShapeNode)
+            if adv.create_torsoTargets(baseGeo, targetGeo, blendShapeNode):
+                self.torso_CreateBtn.setStyleSheet(self.BUTTON_BGC)
+                self.torso_CreateBtn.setEnabled(False)
 
         print 'torsoCreate'
 
-        pass
+
 
     def click_otherCreate_Btn(self):
         print 'otherCreate'
@@ -472,7 +477,6 @@ class CorrectiveBsUI(QtWidgets.QDialog):
             self.targetGeo_LineEdit.setText(str(targetGeo))
 
 
-
     def addBlendShapeConfirmDialog(self):
         result = pm.confirmDialog(title="Add blendShape", message="Can't find blendShape Node , Add or not ?", button=[
             'Yes', 'No'], defaultButton='Yes', cancelButton='No', dismissString='No')
@@ -487,11 +491,9 @@ class CorrectiveBsUI(QtWidgets.QDialog):
             self.changeTargetGeo()
 
 
-    def add_ListWidget_01_items(self,poseDict,listWidget,button):
+    def add_ListWidget_01_items(self,poseDict,listWidget):
         for ctrl, poseGrp in poseDict.items():
             if cmds.objExists(ctrl):
                 for pose in poseGrp:
                     listWidget.addItem(pose)
 
-        button.setStyleSheet(self.BUTTON_BGC)
-        button.setEnabled(False)

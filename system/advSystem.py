@@ -12,6 +12,7 @@ launch :
 
 import maya.cmds as cmds
 import maya.OpenMayaUI as omui
+import pymel.core as pm
 import collections
 
 # arm_ADV_poseDict = {
@@ -116,7 +117,15 @@ class advSystem(object):
 
 
     def create_armTargets(self,baseGeo,targetGeo,blendShapeNode):
+        cmds.undoInfo(openChunk=True)
+
+        # 创建记录信息的组
+        self.createInforGrp(baseGeo,tabName='arm')
+
+        # 创建targetGrp,并对baseGeo做bs
         self.create_Targets(baseGeo,targetGeo,blendShapeNode,self.arm_ADV_poseDict)
+        cmds.undoInfo(closeChunk=True)
+        return True
 
 
     def create_legPoseBrige(self):
@@ -124,15 +133,23 @@ class advSystem(object):
 
 
     def create_legTargets(self,baseGeo,targetGeo,blendShapeNode):
+        cmds.undoInfo(openChunk=True)
+        self.createInforGrp(baseGeo, tabName='leg')
         self.create_Targets(baseGeo,targetGeo,blendShapeNode,self.leg_ADV_poseDict)
+        cmds.undoInfo(closeChunk=True)
+        return True
 
 
-    def create_fingerPoseBrige(self):
-        print 'fingerPose>>>>>>>'
+    # def create_fingerPoseBrige(self):
+    #     print 'fingerPose>>>>>>>'
 
 
     def create_fingerTargets(self,baseGeo,targetGeo,blendShapeNode):
+        cmds.undoInfo(openChunk=True)
+        self.createInforGrp(baseGeo, tabName='finger')
         self.create_Targets(baseGeo,targetGeo,blendShapeNode,self.finger_ADV_poseDict)
+        cmds.undoInfo(closeChunk=True)
+        return True
 
 
     def create_torsoPoseBrige(self):
@@ -140,12 +157,16 @@ class advSystem(object):
 
 
     def create_torsoTargets(self,baseGeo,targetGeo,blendShapeNode):
+        cmds.undoInfo(openChunk=True)
+        self.createInforGrp(baseGeo, tabName='torso')
         self.create_Targets(baseGeo,targetGeo,blendShapeNode,self.torso_ADV_poseDict)
+        cmds.undoInfo(closeChunk=True)
+        return True
 
 
     def create_Targets(self,baseGeo,targetGeo,blendShapeNode,poseDict):
-
         bs_target_list = []
+        # 遍历 poseDict中的Ctrl和Pose
         for ctrl, poseGrp in poseDict.items():
             if cmds.objExists(ctrl):
                 for pose in poseGrp:
@@ -153,11 +174,33 @@ class advSystem(object):
                         bs_target = cmds.duplicate(targetGeo, name='{}_{}'.format(baseGeo, pose))
                         bs_target_list.append(bs_target[0])
 
-        for i in range(len(bs_target_list),):
+        if self.checkMissCtrls(poseDict):
+            for i in range(len(bs_target_list)):
+                if cmds.blendShape(blendShapeNode, q=True, target=True):
+                    currrectTargetNumber = len(cmds.blendShape(blendShapeNode, q=True, target=True))
+                else:
+                    currrectTargetNumber = 0
+                cmds.blendShape(blendShapeNode, edit=True, t =( str(baseGeo) , currrectTargetNumber, str(bs_target_list[i]),1))
 
-            if cmds.blendShape(blendShapeNode, q=True, target=True):
-                currrectTargetNumber = len(cmds.blendShape(blendShapeNode, q=True, target=True))
-            else:
-                currrectTargetNumber = 0
 
-            cmds.blendShape(blendShapeNode, edit=True, t =( str(baseGeo) , currrectTargetNumber, str(bs_target_list[i]),1))
+    def checkMissCtrls(self,poseDict):
+        # 检查是否有丢失的控制器，如果有，弹窗询问用户是否继续创建target
+        allCtrls = [ctrl  for ctrl in poseDict.keys()]
+        existCtrls = [ctrl  for ctrl in poseDict.keys() if cmds.objExists(ctrl)]
+        MissCtrls = list(set(allCtrls).difference(set(existCtrls)))
+        if MissCtrls:
+            result = pm.confirmDialog(title="Controllers Miss ",
+                                      message="{}  \nMissed , Continue or not ?".format(' ,'.join(MissCtrls)),
+                                      button=['Yes', 'No'], defaultButton='Yes', cancelButton='No', dismissString='No')
+            if result == 'Yes':
+                return True
+        else:
+            return True
+
+
+    def createInforGrp(self,baseGeo,tabName=None):
+        targetsInfoGrp= cmds.group(name = '{}Targets_info_Grp'.format(tabName),empty=True,parent = '{}_bsTarget_Grp'.format(baseGeo))
+        for attr in ['.tx', '.ty', '.tz', '.rx', '.ry', '.rz', '.sx', '.sy', '.sz', '.v']:
+            cmds.setAttr('{}{}'.format(targetsInfoGrp, attr), lock=True, keyable=False, channelBox=False)
+
+        cmds.reorder(targetsInfoGrp,back=True)
