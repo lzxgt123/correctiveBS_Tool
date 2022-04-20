@@ -11,7 +11,7 @@ launch :
 '''
 
 import maya.cmds as cmds
-import maya.OpenMayaUI as omui
+import maya.OpenMaya as om
 import pymel.core as pm
 import collections
 
@@ -112,20 +112,13 @@ class advSystem(object):
         for ctrl in self.arm_ADV_poseDict.keys():
             joint = ctrl.strip('FK')
             if cmds.objExists(ctrl):
+
                 pass
         print 'armPose>>>>>>>'
 
 
     def create_armTargets(self,baseGeo,targetGeo,blendShapeNode):
-        cmds.undoInfo(openChunk=True)
-
-        # 创建记录信息的组
-        self.createInforGrp(baseGeo,tabName='arm')
-
-        # 创建targetGrp,并对baseGeo做bs
-        self.create_Targets(baseGeo,targetGeo,blendShapeNode,self.arm_ADV_poseDict)
-        cmds.undoInfo(closeChunk=True)
-        return True
+        pass
 
 
     def create_legPoseBrige(self):
@@ -133,23 +126,11 @@ class advSystem(object):
 
 
     def create_legTargets(self,baseGeo,targetGeo,blendShapeNode):
-        cmds.undoInfo(openChunk=True)
-        self.createInforGrp(baseGeo, tabName='leg')
-        self.create_Targets(baseGeo,targetGeo,blendShapeNode,self.leg_ADV_poseDict)
-        cmds.undoInfo(closeChunk=True)
-        return True
-
-
-    # def create_fingerPoseBrige(self):
-    #     print 'fingerPose>>>>>>>'
+        pass
 
 
     def create_fingerTargets(self,baseGeo,targetGeo,blendShapeNode):
-        cmds.undoInfo(openChunk=True)
-        self.createInforGrp(baseGeo, tabName='finger')
-        self.create_Targets(baseGeo,targetGeo,blendShapeNode,self.finger_ADV_poseDict)
-        cmds.undoInfo(closeChunk=True)
-        return True
+        pass
 
 
     def create_torsoPoseBrige(self):
@@ -157,30 +138,11 @@ class advSystem(object):
 
 
     def create_torsoTargets(self,baseGeo,targetGeo,blendShapeNode):
-        cmds.undoInfo(openChunk=True)
-        self.createInforGrp(baseGeo, tabName='torso')
-        self.create_Targets(baseGeo,targetGeo,blendShapeNode,self.torso_ADV_poseDict)
-        cmds.undoInfo(closeChunk=True)
-        return True
+        pass
 
 
-    def create_Targets(self,baseGeo,targetGeo,blendShapeNode,poseDict):
-        bs_target_list = []
-        # 遍历 poseDict中的Ctrl和Pose
-        for ctrl, poseGrp in poseDict.items():
-            if cmds.objExists(ctrl):
-                for pose in poseGrp:
-                    if not pose.startswith('-'):
-                        bs_target = cmds.duplicate(targetGeo, name='{}_{}'.format(baseGeo, pose))
-                        bs_target_list.append(bs_target[0])
-
-        if self.checkMissCtrls(poseDict):
-            for i in range(len(bs_target_list)):
-                if cmds.blendShape(blendShapeNode, q=True, target=True):
-                    currrectTargetNumber = len(cmds.blendShape(blendShapeNode, q=True, target=True))
-                else:
-                    currrectTargetNumber = 0
-                cmds.blendShape(blendShapeNode, edit=True, t =( str(baseGeo) , currrectTargetNumber, str(bs_target_list[i]),1))
+    def click_CreateBtn(self,baseGeo,targetGeo,blendShapeNode,poseDict,tabName):
+        pass
 
 
     def checkMissCtrls(self,poseDict):
@@ -198,9 +160,21 @@ class advSystem(object):
             return True
 
 
-    def createInforGrp(self,baseGeo,tabName=None):
-        targetsInfoGrp= cmds.group(name = '{}Targets_info_Grp'.format(tabName),empty=True,parent = '{}_bsTarget_Grp'.format(baseGeo))
-        for attr in ['.tx', '.ty', '.tz', '.rx', '.ry', '.rz', '.sx', '.sy', '.sz', '.v']:
-            cmds.setAttr('{}{}'.format(targetsInfoGrp, attr), lock=True, keyable=False, channelBox=False)
+    def createInforGrp(self,baseGeo,tabName=''):
 
-        cmds.reorder(targetsInfoGrp,back=True)
+        # 检测场景中是否存在对应baseGeo的 bsTarget_Grp
+        if cmds.objExists('{}_bsTarget_Grp'.format(baseGeo)):
+
+            targetsInfoGrp= cmds.group(name = '{}Targets_info_Grp'.format(tabName),empty=True,parent = '{}_bsTarget_Grp'.format(baseGeo))
+
+            # 锁定并隐藏组上的属性
+            for attr in ['.tx', '.ty', '.tz', '.rx', '.ry', '.rz', '.sx', '.sy', '.sz', '.v']:
+                cmds.setAttr('{}{}'.format(targetsInfoGrp, attr), lock=True, keyable=False, channelBox=False)
+            
+                
+            # 将targetsInfoGrp置于同级最下层
+            cmds.reorder(targetsInfoGrp,back=True)
+
+        else:
+            om.MGlobal_displayError('QBJ_Tip : {} is not found in the scene !!!'.format('{}_bsTarget_Grp'.format(baseGeo)))
+

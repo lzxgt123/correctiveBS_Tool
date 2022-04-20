@@ -24,9 +24,6 @@ adv = ADV.advSystem()
 import system.humanikSystem as HUMANIK
 reload(HUMANIK)
 humanik = HUMANIK.humanIKSystem()
-import system.userDefinedSystem as UESR
-reload(UESR)
-user = UESR.userDedinedSystem()
 
 
 
@@ -44,12 +41,69 @@ class CorrectiveBsUI(QtWidgets.QDialog):
     WINDOW_TITLE = 'Corrective Tool v1.0.0'
     limitAngleExpr = QtCore.QRegExp('^-?(180|([1-9]?\d|1[0-7][0-9])(\.\d{1,2})?)$')
 
+
+    armPoseDict = [u'-----肩胛-----', 'Scapula_L_Up', 'Scapula_L_Down', 'Scapula_L_Front', 'Scapula_L_Back',
+                   u'-----上臂-----', 'Shoulder_L_Up', 'Shoulder_L_Down', 'Shoulder_L_Front', 'Shoulder_L_Back',
+                   'Shoulder_L_Up_Front', 'Shoulder_L_Up_Back', 'Shoulder_L_Down_Front', 'Shoulder_L_Down_Back',
+                   u'-----肘部-----', 'Elbow_L_Front',
+                   u'-----手腕-----','Wrist_L_Up', 'Wrist_L_Down', 'Wrist_L_Front',
+                   'Wrist_L_Back', 'Wrist_L_Up_Front','Wrist_L_Up_Back', 'Wrist_L_Down_Front', 'Wrist_L_Down_Back'
+                   ]
+
+
+    legPoseDict = [u'-----腿部-----', 'Hip_L_Up', 'Hip_L_Down', 'Hip_L_Front', 'Hip_L_Back',
+                   'Hip_L_Up_Front', 'Hip_L_Up_Back', 'Hip_L_Down_Front', 'Hip_L_Down_Back',
+                   u'-----膝盖-----', 'Knee_L_Back',
+                   u'-----脚踝-----', 'Ankle_L_Up', 'Ankle_L_Down', 'Ankle_L_Front', 'Ankle_L_Back', 'Ankle_L_Up_Front',
+                   'Ankle_L_Up_Back', 'Ankle_L_Down_Front', 'Ankle_L_Down_Back'
+                   ]
+
+
+    fingerPoseDict = [u' - ----食指 - ----', 'IndexFinger1_L_Down', 'IndexFinger1_L_Up',
+                      'IndexFinger2_L_Down', 'IndexFinger2_L_Up',
+                      'IndexFinger3_L_Down', 'IndexFinger3_L_Up',
+                      u'-----中指-----', 'MiddleFinger1_L_Down', 'MiddleFinger1_L_Up',
+                      'MiddleFinger2_L_Down', 'MiddleFinger2_L_Up',
+                      'MiddleFinger3_L_Down', 'MiddleFinger3_L_Up',
+                      u'-----无名指-----', 'RingFinger1_L_Down', 'RingFinger1_L_Up',
+                      'RingFinger2_L_Down', 'RingFinger2_L_Up',
+                      'RingFinger3_L_Down', 'RingFinger3_L_Up',
+                      u'-----小拇指-----', 'PinkyFinger1_L_Down', 'PinkyFinger1_L_Up',
+                      'PinkyFinger2_L_Down', 'PinkyFinger2_L_Up',
+                      'PinkyFinger3_L_Down', 'PinkyFinger3_L_Up',
+                      u'-----大拇指-----', 'ThumbFinger1_L_Down', 'ThumbFinger1_L_Up',
+                      'ThumbFinger2_L_Down', 'ThumbFinger2_L_Up',
+                      'ThumbFinger3_L_Down', 'ThumbFinger3_L_Up'
+                     ]
+
+    torsoPoseDict = [u'-----头部-----', 'Head_M_Front', 'Head_M_Back', 'Head_M_Left', 'Head_M_Right',
+                     u'-----颈部-----', 'Neck_M_Front', 'Neck_M_Back', 'Neck_M_Left', 'Neck_M_Right',
+                     u'-----胸腔-----', 'Chest_M_Front', 'Chest_M_Back', 'Chest_M_Left', 'Chest_M_Right',
+                     u'-----躯干-----', 'Spine1_M_Front', 'Spine1_M_Back', 'Spine1_M_Left', 'Spine1_M_Right',
+                     'Spine2_M_Front', 'Spine2_M_Back', 'Spine2_M_Left', 'Spine2_M_Right'
+                    ]
+
+
     def __init__(self,parent=maya_main_window()):
         super(CorrectiveBsUI, self).__init__(parent)
         self.setWindowFlags(self.windowFlags() ^ QtCore.Qt.WindowContextHelpButtonHint)
         # self.setWindowFlags(self.windowFlags() | QtCore.Qt.WindowMaximizeButtonHint)
         # self.setWindowFlags(self.windowFlags() | QtCore.Qt.WindowMinimizeButtonHint)
         self.showUI()
+
+
+    def setFkModel(self):
+
+        model = self.radionBtn_Grp.checkedButton().text()
+        if model == 'ADV':
+            try:
+                for ctrl in ['FKIKArm_L', 'FKIKArm_R', 'FKIKSpine_M', 'FKIKLeg_L', 'FKIKLeg_R']:
+                    cmds.setAttr('{}.FKIKBlend'.format(ctrl), 0)
+            except:
+                om.MGlobal_displayWarning('QBJ_Tip : The ADV IKFK switch controller are not found ,failed to switch FK model !!')
+                pass
+        elif model == 'HumanIk':
+            pass
 
 
     def showUI(self):
@@ -65,7 +119,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.create_widgets()
         self.create_layouts()
         self.create_connections()
-
+        self.setFkModel()
         self.show()
 
 
@@ -101,13 +155,13 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.adv_radioBtn.setChecked(True)
         self.humanIK_radioBtn = QtWidgets.QRadioButton('HumanIK')
         self.humanIK_radioBtn.setEnabled(False)
-        self.defined_radionBtn = QtWidgets.QRadioButton('Defined')
-        self.defined_radionBtn.setEnabled(False)
+        # self.defined_radionBtn = QtWidgets.QRadioButton('Defined')
+        # self.defined_radionBtn.setEnabled(False)
 
         self.radionBtn_Grp = QtWidgets.QButtonGroup()
         self.radionBtn_Grp.addButton(self.adv_radioBtn,1)
         self.radionBtn_Grp.addButton(self.humanIK_radioBtn, 2)
-        self.radionBtn_Grp.addButton(self.defined_radionBtn,3)
+        # self.radionBtn_Grp.addButton(self.defined_radionBtn,3)
 
         # 创建tabWidget内 组件
         self.tabWidget = QtWidgets.QTabWidget()
@@ -119,13 +173,15 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.arm_Layout.setSizeConstraint(QtWidgets.QLayout.SetDefaultConstraint)
         self.arm_Layout.setContentsMargins(2, 2, 2, 2)
         self.arm_Layout.setSpacing(3)
-        self.arm_CreateBtn = QtWidgets.QPushButton('Create Targets')
+        self.arm_CreateBtn = QtWidgets.QPushButton('Create')
         self.arm_Splitter_01 = QtWidgets.QSplitter(self.arm_Tab)
         self.arm_Splitter_01.setMinimumSize(QtCore.QSize(400, 0))
         self.arm_Splitter_01.setOrientation(QtCore.Qt.Vertical)
         self.arm_Splitter_02 = QtWidgets.QSplitter(self.arm_Splitter_01)
         self.arm_Splitter_02.setOrientation(QtCore.Qt.Horizontal)
         self.arm_ListWidget_01 = QtWidgets.QListWidget(self.arm_Splitter_02)
+        for item in self.armPoseDict:
+            self.arm_ListWidget_01.addItem(item)
         self.arm_ListWidget_02 = QtWidgets.QListWidget(self.arm_Splitter_02)
         self.arm_ListWidget_03 = QtWidgets.QListWidget(self.arm_Splitter_01)
         self.arm_Splitter_01.setStretchFactor(0, 8)
@@ -139,13 +195,15 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.leg_Layout.setSizeConstraint(QtWidgets.QLayout.SetDefaultConstraint)
         self.leg_Layout.setContentsMargins(2, 2, 2, 2)
         self.leg_Layout.setSpacing(3)
-        self.leg_CreateBtn = QtWidgets.QPushButton('Create Targets')
+        self.leg_CreateBtn = QtWidgets.QPushButton('Create')
         self.leg_Splitter_01 = QtWidgets.QSplitter(self.leg_Tab)
         self.leg_Splitter_01.setMinimumSize(QtCore.QSize(400, 0))
         self.leg_Splitter_01.setOrientation(QtCore.Qt.Vertical)
         self.leg_Splitter_02 = QtWidgets.QSplitter(self.leg_Splitter_01)
         self.leg_Splitter_02.setOrientation(QtCore.Qt.Horizontal)
         self.leg_ListWidget_01 = QtWidgets.QListWidget(self.leg_Splitter_02)
+        for item in self.legPoseDict:
+            self.leg_ListWidget_01.addItem(item)
         self.leg_ListWidget_02 = QtWidgets.QListWidget(self.leg_Splitter_02)
         self.leg_ListWidget_03 = QtWidgets.QListWidget(self.leg_Splitter_01)
         self.leg_Splitter_01.setStretchFactor(0, 8)
@@ -159,13 +217,15 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.finger_Layout.setSizeConstraint(QtWidgets.QLayout.SetDefaultConstraint)
         self.finger_Layout.setContentsMargins(2, 2, 2, 2)
         self.finger_Layout.setSpacing(3)
-        self.finger_CreateBtn = QtWidgets.QPushButton('Create Targets')
+        self.finger_CreateBtn = QtWidgets.QPushButton('Create')
         self.finger_Splitter_01 = QtWidgets.QSplitter(self.finger_Tab)
         self.finger_Splitter_01.setMinimumSize(QtCore.QSize(400, 0))
         self.finger_Splitter_01.setOrientation(QtCore.Qt.Vertical)
         self.finger_Splitter_02 = QtWidgets.QSplitter(self.finger_Splitter_01)
         self.finger_Splitter_02.setOrientation(QtCore.Qt.Horizontal)
         self.finger_ListWidget_01 = QtWidgets.QListWidget(self.finger_Splitter_02)
+        for item in self.fingerPoseDict:
+            self.finger_ListWidget_01.addItem(item)
         self.finger_ListWidget_02 = QtWidgets.QListWidget(self.finger_Splitter_02)
         self.finger_ListWidget_03 = QtWidgets.QListWidget(self.finger_Splitter_01)
         self.finger_Splitter_01.setStretchFactor(0, 8)
@@ -179,13 +239,15 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.torso_Layout.setSizeConstraint(QtWidgets.QLayout.SetDefaultConstraint)
         self.torso_Layout.setContentsMargins(2, 2, 2, 2)
         self.torso_Layout.setSpacing(3)
-        self.torso_CreateBtn = QtWidgets.QPushButton('Create Targets')
+        self.torso_CreateBtn = QtWidgets.QPushButton('Create')
         self.torso_Splitter_01 = QtWidgets.QSplitter(self.torso_Tab)
         self.torso_Splitter_01.setMinimumSize(QtCore.QSize(400, 0))
         self.torso_Splitter_01.setOrientation(QtCore.Qt.Vertical)
         self.torso_Splitter_02 = QtWidgets.QSplitter(self.torso_Splitter_01)
         self.torso_Splitter_02.setOrientation(QtCore.Qt.Horizontal)
         self.torso_ListWidget_01 = QtWidgets.QListWidget(self.torso_Splitter_02)
+        for item in self.torsoPoseDict:
+            self.torso_ListWidget_01.addItem(item)
         self.torso_ListWidget_02 = QtWidgets.QListWidget(self.torso_Splitter_02)
         self.torso_ListWidget_03 = QtWidgets.QListWidget(self.torso_Splitter_01)
         self.torso_Splitter_01.setStretchFactor(0, 8)
@@ -194,34 +256,43 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.torso_Layout.addWidget(self.torso_Splitter_01)
         self.tabWidget.addTab(self.torso_Tab, 'torso')
 
-        self.other_Tab = QtWidgets.QWidget(self.tabWidget)
-        self.other_Layout = QtWidgets.QVBoxLayout(self.other_Tab)
-        self.other_Layout.setSizeConstraint(QtWidgets.QLayout.SetDefaultConstraint)
-        self.other_Layout.setContentsMargins(2, 2, 2, 2)
-        self.other_Layout.setSpacing(3)
-        self.other_CreateBtn = QtWidgets.QPushButton('Create Targets')
-        self.other_Splitter_01 = QtWidgets.QSplitter(self.other_Tab)
-        self.other_Splitter_01.setMinimumSize(QtCore.QSize(400, 0))
-        self.other_Splitter_01.setOrientation(QtCore.Qt.Vertical)
-        self.other_Splitter_02 = QtWidgets.QSplitter(self.other_Splitter_01)
-        self.other_Splitter_02.setOrientation(QtCore.Qt.Horizontal)
-        self.other_ListWidget_01 = QtWidgets.QListWidget(self.other_Splitter_02)
-        self.other_ListWidget_02 = QtWidgets.QListWidget(self.other_Splitter_02)
-        self.other_ListWidget_03 = QtWidgets.QListWidget(self.other_Splitter_01)
-        self.other_Splitter_01.setStretchFactor(0, 8)
-        self.other_Splitter_01.setStretchFactor(1, 2)
-        self.other_Layout.addWidget(self.other_CreateBtn)
-        self.other_Layout.addWidget(self.other_Splitter_01)
-        self.tabWidget.addTab(self.other_Tab, 'other')
+        self.custom_Tab = QtWidgets.QWidget(self.tabWidget)
+        self.custom_Layout = QtWidgets.QVBoxLayout(self.custom_Tab)
+        self.custom_Layout.setSizeConstraint(QtWidgets.QLayout.SetDefaultConstraint)
+        self.custom_Layout.setContentsMargins(2, 2, 2, 2)
+        self.custom_Layout.setSpacing(3)
+        self.custom_CreateBtn = QtWidgets.QPushButton('Create')
+        self.custom_Splitter_01 = QtWidgets.QSplitter(self.custom_Tab)
+        self.custom_Splitter_01.setMinimumSize(QtCore.QSize(400, 0))
+        self.custom_Splitter_01.setOrientation(QtCore.Qt.Vertical)
+        self.custom_Splitter_02 = QtWidgets.QSplitter(self.custom_Splitter_01)
+        self.custom_Splitter_02.setOrientation(QtCore.Qt.Horizontal)
+        self.custom_ListWidget_01 = QtWidgets.QListWidget(self.custom_Splitter_02)
+        self.custom_ListWidget_02 = QtWidgets.QListWidget(self.custom_Splitter_02)
+        self.custom_ListWidget_03 = QtWidgets.QListWidget(self.custom_Splitter_01)
+        self.custom_Splitter_01.setStretchFactor(0, 8)
+        self.custom_Splitter_01.setStretchFactor(1, 2)
+        self.custom_Layout.addWidget(self.custom_CreateBtn)
+        self.custom_Layout.addWidget(self.custom_Splitter_01)
+        self.tabWidget.addTab(self.custom_Tab, 'custom')
 
+        # 创建驱动控制 组件
+        self.driver_Label = QtWidgets.QLabel('Driver :')
+        self.driver_LineEdit = QtWidgets.QLineEdit()
+
+        self.driver_LineEdit.setReadOnly(True)
+        # self.driverReload_Btn  =  QtWidgets.QPushButton('Reload')
 
         # 创建控制器旋转数值显示 组件
         self.rotate_Label = QtWidgets.QLabel('Rotate:')
         self.rotate_LineEdit_01 = QtWidgets.QLineEdit()
+        self.rotate_LineEdit_01.setText('0.000')
         self.rotate_LineEdit_01.setReadOnly(True)
         self.rotate_LineEdit_02 = QtWidgets.QLineEdit()
+        self.rotate_LineEdit_02.setText('0.000')
         self.rotate_LineEdit_02.setReadOnly(True)
         self.rotate_LineEdit_03 = QtWidgets.QLineEdit()
+        self.rotate_LineEdit_03.setText('0.000')
         self.rotate_LineEdit_03.setReadOnly(True)
 
         # 创建修型按钮 组件
@@ -263,18 +334,25 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.type_layout.addWidget(self.controlsType_Label)
         self.type_layout.addWidget(self.adv_radioBtn)
         self.type_layout.addWidget(self.humanIK_radioBtn)
-        self.type_layout.addWidget(self.defined_radionBtn)
+        # self.type_layout.addWidget(self.defined_radionBtn)
 
         # 创建sculpt布局
         self.sculpt_Layout = QtWidgets.QHBoxLayout()
-        self.sculpt_Layout.setContentsMargins(2,2,2,2)
+        self.sculpt_Layout.setContentsMargins(4,2,4,2)
         self.sculpt_Layout.addWidget(self.sculpt_Btn)
         self.sculpt_Layout.addWidget(self.mirror_Btn)
         self.sculpt_Layout.addWidget(self.exit_Btn)
 
+        # 创建驱动控制 布局
+        self.driver_layout = QtWidgets.QHBoxLayout()
+        self.driver_layout.setContentsMargins(4,0,4,0)
+        self.driver_layout.addWidget(self.driver_Label)
+        self.driver_layout.addWidget(self.driver_LineEdit)
+        # self.driver_layout.addWidget(self.driverReload_Btn)
+
         # 创建控制器旋转数值显示 布局
         self.rotate_layout = QtWidgets.QHBoxLayout()
-        self.rotate_layout.setContentsMargins(4,2,4,2)
+        self.rotate_layout.setContentsMargins(4,0,4,0)
         self.rotate_layout.addWidget(self.rotate_Label)
         self.rotate_layout.addWidget(self.rotate_LineEdit_01)
         self.rotate_layout.addWidget(self.rotate_LineEdit_02)
@@ -285,13 +363,16 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         main_Layout.addLayout(self.load_GridLayout)
         main_Layout.addWidget(self.separator_01)
         main_Layout.addLayout(self.type_layout)
+        main_Layout.addLayout(self.driver_layout)
         main_Layout.addWidget(self.tabWidget)
         main_Layout.addLayout(self.rotate_layout)
         main_Layout.addLayout(self.sculpt_Layout)
         main_Layout.addWidget(self.separator_02)
         main_Layout.addWidget(self.copyRight_label)
 
+
     def create_connections(self):
+
         self.baseGeo_Btn.clicked.connect(self.click_BaseGeoLoad_Btn)
         self.targetGeo_Btn.clicked.connect(self.click_targetGeoLoad_Btn)
         # self.add_Btn.clicked.connect(self.click_addBS_Btn)
@@ -301,10 +382,14 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.exit_Btn.clicked.connect(self.click_exit_Btn)
 
         self.arm_CreateBtn.clicked.connect(self.click_armCreate_Btn)
+        self.arm_ListWidget_01.itemClicked.connect(self.click_armListWidget01_item)
         self.leg_CreateBtn.clicked.connect(self.click_legCreate_Btn)
+        self.leg_ListWidget_01.itemClicked.connect(self.click_legListWidget01_item)
         self.finger_CreateBtn.clicked.connect(self.click_fingerCreate_Btn)
+        self.finger_ListWidget_01.clicked.connect(self.click_fingerListWidget01_item)
         self.torso_CreateBtn.clicked.connect(self.click_torsoCreate_Btn)
-        self.other_CreateBtn.clicked.connect(self.click_otherCreate_Btn)
+        self.torso_ListWidget_01.clicked.connect(self.click_torsoListWidget01_item)
+        self.custom_CreateBtn.clicked.connect(self.click_customCreate_Btn)
 
 
     def click_BaseGeoLoad_Btn(self):
@@ -322,6 +407,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
 
             if bsNode:
                 if len(bsNode) == 1:
+                    self.blendshape_comboBox.clear()
                     self.blendshape_comboBox.addItem(bsNode[0])
                 else :
                     om.MGlobal_displayError('QBJ_Tip : More than one blendShape node on the object !!!')
@@ -360,19 +446,6 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         blendShapeNode = self.blendshape_comboBox.currentText()
         currectSysytem = self.radionBtn_Grp.checkedButton().text()
 
-        # 将poseGrp添加到arm_ListWidget_01中
-        self.arm_ListWidget_01.clear()
-        if currectSysytem == 'ADV':
-            self.add_ListWidget_01_items(adv.arm_ADV_poseDict,self.arm_ListWidget_01)
-
-            # 根据adv控制器的命名规则，创建poseBridge组并进行连接
-            adv.create_armPoseBrige()
-
-            # 生成blendShape targetGeo，并添加到blendShapeNode中
-            if adv.create_armTargets(baseGeo,targetGeo,blendShapeNode):
-                self.arm_CreateBtn.setStyleSheet(self.BUTTON_BGC)
-                self.arm_CreateBtn.setEnabled(False)
-
         print 'armCreate'
 
 
@@ -381,20 +454,6 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         targetGeo = self.targetGeo_LineEdit.text()
         blendShapeNode = self.blendshape_comboBox.currentText()
         currectSysytem = self.radionBtn_Grp.checkedButton().text()
-
-        # 将poseGrp添加到arm_ListWidget_01中
-        self.leg_ListWidget_01.clear()
-        if currectSysytem == 'ADV':
-            self.add_ListWidget_01_items(adv.leg_ADV_poseDict,self.leg_ListWidget_01)
-
-            # 根据adv控制器的命名规则，创建poseBridge组并进行连接
-            adv.create_legPoseBrige()
-
-            # 生成blendShape targetGeo，并添加到blendShapeNode中
-            if adv.create_legTargets(baseGeo, targetGeo, blendShapeNode):
-                self.leg_CreateBtn.setStyleSheet(self.BUTTON_BGC)
-                self.leg_CreateBtn.setEnabled(False)
-
         print 'legCreate'
 
 
@@ -403,46 +462,19 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         targetGeo = self.targetGeo_LineEdit.text()
         blendShapeNode = self.blendshape_comboBox.currentText()
         currectSysytem = self.radionBtn_Grp.checkedButton().text()
-
-        # 将poseGrp添加到arm_ListWidget_01中
-        self.finger_ListWidget_01.clear()
-        if currectSysytem == 'ADV':
-            self.add_ListWidget_01_items(adv.finger_ADV_poseDict,self.finger_ListWidget_01)
-
-            # 生成blendShape targetGeo，并添加到blendShapeNode中
-            if adv.create_fingerTargets(baseGeo, targetGeo, blendShapeNode):
-                self.finger_CreateBtn.setStyleSheet(self.BUTTON_BGC)
-                self.finger_CreateBtn.setEnabled(False)
-
         print 'fingerCreate'
 
 
     def click_torsoCreate_Btn(self):
-
         baseGeo = self.baseGeo_LineEdit.text()
         targetGeo = self.targetGeo_LineEdit.text()
         blendShapeNode = self.blendshape_comboBox.currentText()
         currectSysytem = self.radionBtn_Grp.checkedButton().text()
-
-        # 将poseGrp添加到arm_ListWidget_01中
-        self.torso_ListWidget_01.clear()
-        if currectSysytem == 'ADV':
-            self.add_ListWidget_01_items(adv.torso_ADV_poseDict,self.torso_ListWidget_01)
-
-            # 根据adv控制器的命名规则，创建poseBridge组并进行连接
-            adv.create_torsoPoseBrige()
-
-            # 生成blendShape targetGeo，并添加到blendShapeNode中
-            if adv.create_torsoTargets(baseGeo, targetGeo, blendShapeNode):
-                self.torso_CreateBtn.setStyleSheet(self.BUTTON_BGC)
-                self.torso_CreateBtn.setEnabled(False)
-
         print 'torsoCreate'
 
 
-
-    def click_otherCreate_Btn(self):
-        print 'otherCreate'
+    def click_customCreate_Btn(self):
+        print 'customCreate'
         pass
 
     def click_sculpt_Btn(self):
@@ -466,6 +498,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         if baseGeo:
             targetGeo_bsNode_list = tool.add_blendShape(baseGeo)
             self.targetGeo_LineEdit.setText(str(targetGeo_bsNode_list[0]))
+            self.blendshape_comboBox.clear()
             self.blendshape_comboBox.addItem(str(targetGeo_bsNode_list[1][0]))
             om.MGlobal_displayInfo('QBJ_Tip : Add blendShape successfully !')
 
@@ -491,9 +524,92 @@ class CorrectiveBsUI(QtWidgets.QDialog):
             self.changeTargetGeo()
 
 
-    def add_ListWidget_01_items(self,poseDict,listWidget):
-        for ctrl, poseGrp in poseDict.items():
-            if cmds.objExists(ctrl):
-                for pose in poseGrp:
-                    listWidget.addItem(pose)
+    def click_armListWidget01_item(self):
+        baseGeo = self.baseGeo_LineEdit.text()
+        blendShapeNode = self.blendshape_comboBox.currentText()
+        # 获取Driver信息
+        self.loadDriverInfo(self.arm_ListWidget_01)
+        # 获取对应命名的target
+        self.loadTarget(baseGeo,blendShapeNode,self.arm_ListWidget_01,self.arm_ListWidget_02)
 
+
+    def click_legListWidget01_item(self):
+        baseGeo = self.baseGeo_LineEdit.text()
+        blendShapeNode = self.blendshape_comboBox.currentText()
+        # 获取Driver信息
+        self.loadDriverInfo(self.leg_ListWidget_01)
+        # 获取对应命名的target
+        self.loadTarget(baseGeo, blendShapeNode, self.leg_ListWidget_01, self.leg_ListWidget_02)
+
+
+    def click_fingerListWidget01_item(self):
+        baseGeo = self.baseGeo_LineEdit.text()
+        blendShapeNode = self.blendshape_comboBox.currentText()
+        # 获取对应命名的target
+        self.loadTarget(baseGeo, blendShapeNode, self.finger_ListWidget_01, self.finger_ListWidget_02)
+
+
+    def click_torsoListWidget01_item(self):
+        baseGeo = self.baseGeo_LineEdit.text()
+        blendShapeNode = self.blendshape_comboBox.currentText()
+        # 获取Driver信息
+        self.loadDriverInfo(self.torso_ListWidget_01)
+        # 获取对应命名的target
+        self.loadTarget(baseGeo, blendShapeNode, self.torso_ListWidget_01, self.torso_ListWidget_02)
+
+
+    def loadDriverInfo(self,ListWidget_01):
+        currectSelectItem = ListWidget_01.currentItem().text()
+        # 过滤以'-'开头的item
+        if not currectSelectItem.startswith('-'):
+            poseGrp = currectSelectItem.split('_')[0] + '_' + currectSelectItem.split('_')[1] + '_poseGrp'
+            # 将poseGrp上的数据显示在driver_LineEdit中
+            if cmds.objExists(poseGrp):
+                value = cmds.getAttr('{}.{}'.format(poseGrp, currectSelectItem))
+                self.driver_LineEdit.setText('{}.{}    {}'.format(poseGrp, currectSelectItem, round(value, 4)))
+            else:
+                self.driver_LineEdit.setText('')
+                om.MGlobal_displayError('QBJ_Tip : Can not find {} !!! '.format(poseGrp))
+
+
+    def loadTarget(self,baseGeo,blendShapeNode,ListWidget_01,ListWidget_02):
+        currectSelectItem = ListWidget_01.currentItem().text()
+
+        if blendShapeNode:
+            # 过滤以'-'开头的item
+            if not currectSelectItem.startswith('-'):
+                # 获取指点命名的target，并添加到ListWidget_02中
+                allTargets = cmds.aliasAttr(blendShapeNode, q=True)
+                targetName = []
+                for i in range(0, len(allTargets), 2):
+                    targetName.append(allTargets[i])
+                if targetName:
+                    if '{}_{}'.format(baseGeo,currectSelectItem) in targetName:
+                        ListWidget_02.clear()
+                        ListWidget_02.addItem(currectSelectItem)
+                    else:
+                        ListWidget_02.clear()
+
+
+    def setCtrlRotation (self,ListWidget_01):
+        rotateValue = self.returnRotateValue()
+        currectSelectItem = ListWidget_01.currentItem().text()
+        fkCtrl = 'FK' + currectSelectItem.split('_')[0]+currectSelectItem.split('_')[1]
+        if fkCtrl:
+            for rotate,value in rotateValue:
+                cmds.setAttr('{}.{}'.format(fkCtrl,rotate),value)
+
+            pass
+
+
+    def returnRotateValue(self):
+        rotatetList = ['rx', 'ry', 'rz']
+
+        rxValue = self.rotate_LineEdit_01.text()
+        ryValue = self.rotate_LineEdit_02.text()
+        rzValue = self.rotate_LineEdit_03.text()
+        valueList = [rxValue,ryValue,rzValue]
+
+        rotateValueData = zip(rotatetList,valueList)
+        rotateValue = dict(rotateValueData)
+        return rotateValue
