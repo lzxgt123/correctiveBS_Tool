@@ -38,24 +38,24 @@ def maya_main_window():
 class CorrectiveBsUI(QtWidgets.QDialog):
 
     BUTTON_BGC = "background-color:rgb(142,188,255);color:black;"
-    WINDOW_TITLE = 'Corrective Tool v1.0.0'
+    WINDOW_TITLE = 'Corrective Tool v1.0.0 Beta'
     limitAngleExpr = QtCore.QRegExp('^-?(180|([1-9]?\d|1[0-7][0-9])(\.\d{1,2})?)$')
 
 
     armPoseDict = [u'-----肩胛-----', 'Scapula_L_Up', 'Scapula_L_Down', 'Scapula_L_Front', 'Scapula_L_Back',
                    u'-----上臂-----', 'Shoulder_L_Up', 'Shoulder_L_Down', 'Shoulder_L_Front', 'Shoulder_L_Back',
-                   'Shoulder_L_Up_Front', 'Shoulder_L_Up_Back', 'Shoulder_L_Down_Front', 'Shoulder_L_Down_Back',
+                   'Shoulder_L_UpFront', 'Shoulder_L_UpBack', 'Shoulder_L_DownFront', 'Shoulder_L_DownBack',
                    u'-----肘部-----', 'Elbow_L_Front',
                    u'-----手腕-----','Wrist_L_Up', 'Wrist_L_Down', 'Wrist_L_Front',
-                   'Wrist_L_Back', 'Wrist_L_Up_Front','Wrist_L_Up_Back', 'Wrist_L_Down_Front', 'Wrist_L_Down_Back'
+                   'Wrist_L_Back', 'Wrist_L_UpFront','Wrist_L_UpBack', 'Wrist_L_DownFront', 'Wrist_L_DownBack'
                    ]
 
 
     legPoseDict = [u'-----腿部-----', 'Hip_L_Up', 'Hip_L_Down', 'Hip_L_Front', 'Hip_L_Back',
-                   'Hip_L_Up_Front', 'Hip_L_Up_Back', 'Hip_L_Down_Front', 'Hip_L_Down_Back',
+                   'Hip_L_UpFront', 'Hip_L_UpBack', 'Hip_L_DownFront', 'Hip_L_DownBack',
                    u'-----膝盖-----', 'Knee_L_Back',
-                   u'-----脚踝-----', 'Ankle_L_Up', 'Ankle_L_Down', 'Ankle_L_Front', 'Ankle_L_Back', 'Ankle_L_Up_Front',
-                   'Ankle_L_Up_Back', 'Ankle_L_Down_Front', 'Ankle_L_Down_Back'
+                   u'-----脚踝-----', 'Ankle_L_Up', 'Ankle_L_Down', 'Ankle_L_Front', 'Ankle_L_Back', 'Ankle_L_UpFront',
+                   'Ankle_L_UpBack', 'Ankle_L_DownFront', 'Ankle_L_DownBack'
                    ]
 
 
@@ -87,8 +87,8 @@ class CorrectiveBsUI(QtWidgets.QDialog):
     def __init__(self,parent=maya_main_window()):
         super(CorrectiveBsUI, self).__init__(parent)
         self.setWindowFlags(self.windowFlags() ^ QtCore.Qt.WindowContextHelpButtonHint)
-        # self.setWindowFlags(self.windowFlags() | QtCore.Qt.WindowMaximizeButtonHint)
-        # self.setWindowFlags(self.windowFlags() | QtCore.Qt.WindowMinimizeButtonHint)
+        self.setWindowFlags(self.windowFlags() | QtCore.Qt.WindowMaximizeButtonHint)
+        self.setWindowFlags(self.windowFlags() | QtCore.Qt.WindowMinimizeButtonHint)
         self.showUI()
 
 
@@ -286,13 +286,13 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         # 创建控制器旋转数值显示 组件
         self.rotate_Label = QtWidgets.QLabel('Rotate:')
         self.rotate_LineEdit_01 = QtWidgets.QLineEdit()
-        self.rotate_LineEdit_01.setText('0.000')
+        self.rotate_LineEdit_01.setText('0.0')
         self.rotate_LineEdit_01.setReadOnly(True)
         self.rotate_LineEdit_02 = QtWidgets.QLineEdit()
-        self.rotate_LineEdit_02.setText('0.000')
+        self.rotate_LineEdit_02.setText('0.0')
         self.rotate_LineEdit_02.setReadOnly(True)
         self.rotate_LineEdit_03 = QtWidgets.QLineEdit()
-        self.rotate_LineEdit_03.setText('0.000')
+        self.rotate_LineEdit_03.setText('0.0')
         self.rotate_LineEdit_03.setReadOnly(True)
 
         # 创建修型按钮 组件
@@ -531,6 +531,10 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.loadDriverInfo(self.arm_ListWidget_01)
         # 获取对应命名的target
         self.loadTarget(baseGeo,blendShapeNode,self.arm_ListWidget_01,self.arm_ListWidget_02)
+        # 获取所选择的item对应的控制器的旋转数值
+        self.set_RotateLineEdit_Value(self.arm_ListWidget_01)
+        # 根据RotateLineEdit上的数值，设置控制器的旋转
+        self.setCtrlRotation(self.arm_ListWidget_01)
 
 
     def click_legListWidget01_item(self):
@@ -540,6 +544,10 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.loadDriverInfo(self.leg_ListWidget_01)
         # 获取对应命名的target
         self.loadTarget(baseGeo, blendShapeNode, self.leg_ListWidget_01, self.leg_ListWidget_02)
+        # 获取所选择的item对应的控制器的旋转数值
+        self.set_RotateLineEdit_Value(self.leg_ListWidget_01)
+        # 根据RotateLineEdit上的数值，设置控制器的旋转
+        self.setCtrlRotation(self.leg_ListWidget_01)
 
 
     def click_fingerListWidget01_item(self):
@@ -547,6 +555,10 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         blendShapeNode = self.blendshape_comboBox.currentText()
         # 获取对应命名的target
         self.loadTarget(baseGeo, blendShapeNode, self.finger_ListWidget_01, self.finger_ListWidget_02)
+        # 获取所选择的item对应的控制器的旋转数值
+        self.set_RotateLineEdit_Value(self.finger_ListWidget_01)
+        # 根据RotateLineEdit上的数值，设置控制器的旋转
+        self.setCtrlRotation(self.finger_ListWidget_01)
 
 
     def click_torsoListWidget01_item(self):
@@ -556,6 +568,10 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.loadDriverInfo(self.torso_ListWidget_01)
         # 获取对应命名的target
         self.loadTarget(baseGeo, blendShapeNode, self.torso_ListWidget_01, self.torso_ListWidget_02)
+        # 获取所选择的item对应的控制器的旋转数值
+        self.set_RotateLineEdit_Value(self.torso_ListWidget_01)
+        # 根据RotateLineEdit上的数值，设置控制器的旋转
+        self.setCtrlRotation(self.torso_ListWidget_01)
 
 
     def loadDriverInfo(self,ListWidget_01):
@@ -574,32 +590,30 @@ class CorrectiveBsUI(QtWidgets.QDialog):
 
     def loadTarget(self,baseGeo,blendShapeNode,ListWidget_01,ListWidget_02):
         currectSelectItem = ListWidget_01.currentItem().text()
-
         if blendShapeNode:
             # 过滤以'-'开头的item
             if not currectSelectItem.startswith('-'):
                 # 获取指点命名的target，并添加到ListWidget_02中
                 allTargets = cmds.aliasAttr(blendShapeNode, q=True)
                 targetName = []
-                for i in range(0, len(allTargets), 2):
-                    targetName.append(allTargets[i])
-                if targetName:
-                    if '{}_{}'.format(baseGeo,currectSelectItem) in targetName:
-                        ListWidget_02.clear()
-                        ListWidget_02.addItem(currectSelectItem)
-                    else:
-                        ListWidget_02.clear()
+                if allTargets:
+                    for i in range(0, len(allTargets), 2):
+                        targetName.append(allTargets[i])
+                    if targetName:
+                        if '{}_{}'.format(baseGeo,currectSelectItem) in targetName:
+                            ListWidget_02.clear()
+                            ListWidget_02.addItem(currectSelectItem)
+                        else:
+                            ListWidget_02.clear()
 
 
     def setCtrlRotation (self,ListWidget_01):
         rotateValue = self.returnRotateValue()
         currectSelectItem = ListWidget_01.currentItem().text()
-        fkCtrl = 'FK' + currectSelectItem.split('_')[0]+currectSelectItem.split('_')[1]
+        fkCtrl = 'FK' + currectSelectItem.split('_')[0]+'_'+currectSelectItem.split('_')[1]
         if fkCtrl:
-            for rotate,value in rotateValue:
-                cmds.setAttr('{}.{}'.format(fkCtrl,rotate),value)
-
-            pass
+            for rotate,value in rotateValue.items():
+                cmds.setAttr('{}.{}'.format(fkCtrl,rotate),float(value))
 
 
     def returnRotateValue(self):
@@ -613,3 +627,12 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         rotateValueData = zip(rotatetList,valueList)
         rotateValue = dict(rotateValueData)
         return rotateValue
+
+
+    def set_RotateLineEdit_Value(self,ListWidget_01):
+        currectSelectItem = ListWidget_01.currentItem().text()
+        hideGrp = currectSelectItem.replace(currectSelectItem.split('_')[-1],'poseGrp_Hide')
+        valueList = cmds.getAttr('{}.{}'.format(hideGrp,currectSelectItem.split('_')[-1]))
+        self.rotate_LineEdit_01.setText(str(valueList[0][0]))
+        self.rotate_LineEdit_02.setText(str(valueList[0][1]))
+        self.rotate_LineEdit_03.setText(str(valueList[0][2]))
