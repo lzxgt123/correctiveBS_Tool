@@ -9,6 +9,7 @@ launch :
         reload(QBJ_correctiveBS_UI)
 '''
 
+from itertools import chain
 import pymel.core as pm
 import maya.OpenMaya as om
 import maya.cmds as cmds
@@ -21,9 +22,9 @@ tool = CBT.CorrectiveBsTool()
 import system.advSystem as ADV
 reload(ADV)
 adv = ADV.advSystem()
-import system.humanikSystem as HUMANIK
-reload(HUMANIK)
-humanik = HUMANIK.humanIKSystem()
+# import system.humanikSystem as HUMANIK
+# reload(HUMANIK)
+# humanik = HUMANIK.humanIKSystem()
 
 
 
@@ -42,7 +43,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
     limitAngleExpr = QtCore.QRegExp('^-?(180|([1-9]?\d|1[0-7][0-9])(\.\d{1,2})?)$')
 
 
-    armPoseDict = [u'-----肩胛-----', 'Scapula_L_Up', 'Scapula_L_Down', 'Scapula_L_Front', 'Scapula_L_Back',
+    armPoseList = [u'-----肩胛-----', 'Scapula_L_Up', 'Scapula_L_Down', 'Scapula_L_Front', 'Scapula_L_Back',
                    u'-----上臂-----', 'Shoulder_L_Up', 'Shoulder_L_Down', 'Shoulder_L_Front', 'Shoulder_L_Back',
                    'Shoulder_L_UpFront', 'Shoulder_L_UpBack', 'Shoulder_L_DownFront', 'Shoulder_L_DownBack',
                    u'-----肘部-----', 'Elbow_L_Front',
@@ -51,7 +52,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
                    ]
 
 
-    legPoseDict = [u'-----腿部-----', 'Hip_L_Up', 'Hip_L_Down', 'Hip_L_Front', 'Hip_L_Back',
+    legPoseList = [u'-----腿部-----', 'Hip_L_Up', 'Hip_L_Down', 'Hip_L_Front', 'Hip_L_Back',
                    'Hip_L_UpFront', 'Hip_L_UpBack', 'Hip_L_DownFront', 'Hip_L_DownBack',
                    u'-----膝盖-----', 'Knee_L_Back',
                    u'-----脚踝-----', 'Ankle_L_Up', 'Ankle_L_Down', 'Ankle_L_Front', 'Ankle_L_Back', 'Ankle_L_UpFront',
@@ -59,7 +60,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
                    ]
 
 
-    fingerPoseDict = [u' - ----食指 - ----', 'IndexFinger1_L_Down', 'IndexFinger1_L_Up',
+    fingerPoseList = [u'-----食指-----', 'IndexFinger1_L_Down', 'IndexFinger1_L_Up',
                       'IndexFinger2_L_Down', 'IndexFinger2_L_Up',
                       'IndexFinger3_L_Down', 'IndexFinger3_L_Up',
                       u'-----中指-----', 'MiddleFinger1_L_Down', 'MiddleFinger1_L_Up',
@@ -76,7 +77,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
                       'ThumbFinger3_L_Down', 'ThumbFinger3_L_Up'
                      ]
 
-    torsoPoseDict = [u'-----头部-----', 'Head_M_Front', 'Head_M_Back', 'Head_M_Left', 'Head_M_Right',
+    torsoPoseList = [u'-----头部-----', 'Head_M_Front', 'Head_M_Back', 'Head_M_Left', 'Head_M_Right',
                      u'-----颈部-----', 'Neck_M_Front', 'Neck_M_Back', 'Neck_M_Left', 'Neck_M_Right',
                      u'-----胸腔-----', 'Chest_M_Front', 'Chest_M_Back', 'Chest_M_Left', 'Chest_M_Right',
                      u'-----躯干-----', 'Spine1_M_Front', 'Spine1_M_Back', 'Spine1_M_Left', 'Spine1_M_Right',
@@ -99,6 +100,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
             try:
                 for ctrl in ['FKIKArm_L', 'FKIKArm_R', 'FKIKSpine_M', 'FKIKLeg_L', 'FKIKLeg_R']:
                     cmds.setAttr('{}.FKIKBlend'.format(ctrl), 0)
+                om.MGlobal_displayInfo('QBJ_Tip : Switch to FK mode successfully !')
             except:
                 om.MGlobal_displayWarning('QBJ_Tip : The ADV IKFK switch controller are not found ,failed to switch FK model !!')
                 pass
@@ -180,8 +182,15 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.arm_Splitter_02 = QtWidgets.QSplitter(self.arm_Splitter_01)
         self.arm_Splitter_02.setOrientation(QtCore.Qt.Horizontal)
         self.arm_ListWidget_01 = QtWidgets.QListWidget(self.arm_Splitter_02)
-        for item in self.armPoseDict:
+        for item in self.armPoseList:
             self.arm_ListWidget_01.addItem(item)
+
+        # 添加leg_ListWidget_01右击menu显示
+        self.arm_ListWidget_01.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.arm_contextMenu = QtWidgets.QMenu(self.arm_ListWidget_01)
+        self.arm_setAni = self.arm_contextMenu.addAction('set Anim')
+        self.arm_delAni = self.arm_contextMenu.addAction('del Anim')
+
         self.arm_ListWidget_02 = QtWidgets.QListWidget(self.arm_Splitter_02)
         self.arm_ListWidget_03 = QtWidgets.QListWidget(self.arm_Splitter_01)
         self.arm_Splitter_01.setStretchFactor(0, 8)
@@ -202,8 +211,15 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.leg_Splitter_02 = QtWidgets.QSplitter(self.leg_Splitter_01)
         self.leg_Splitter_02.setOrientation(QtCore.Qt.Horizontal)
         self.leg_ListWidget_01 = QtWidgets.QListWidget(self.leg_Splitter_02)
-        for item in self.legPoseDict:
+        for item in self.legPoseList:
             self.leg_ListWidget_01.addItem(item)
+
+        # 添加leg_ListWidget_01右击menu显示
+        self.leg_ListWidget_01.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.leg_contextMenu = QtWidgets.QMenu(self.leg_ListWidget_01)
+        self.leg_setAni = self.leg_contextMenu.addAction('set Anim')
+        self.leg_delAni = self.leg_contextMenu.addAction('del Anim')
+
         self.leg_ListWidget_02 = QtWidgets.QListWidget(self.leg_Splitter_02)
         self.leg_ListWidget_03 = QtWidgets.QListWidget(self.leg_Splitter_01)
         self.leg_Splitter_01.setStretchFactor(0, 8)
@@ -224,8 +240,15 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.finger_Splitter_02 = QtWidgets.QSplitter(self.finger_Splitter_01)
         self.finger_Splitter_02.setOrientation(QtCore.Qt.Horizontal)
         self.finger_ListWidget_01 = QtWidgets.QListWidget(self.finger_Splitter_02)
-        for item in self.fingerPoseDict:
+        for item in self.fingerPoseList:
             self.finger_ListWidget_01.addItem(item)
+
+        # 添加finger_ListWidget_01右击menu显示
+        self.finger_ListWidget_01.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.finger_contextMenu = QtWidgets.QMenu(self.finger_ListWidget_01)
+        self.finger_setAni = self.finger_contextMenu.addAction('set Anim')
+        self.finger_delAni = self.finger_contextMenu.addAction('del Anim')
+
         self.finger_ListWidget_02 = QtWidgets.QListWidget(self.finger_Splitter_02)
         self.finger_ListWidget_03 = QtWidgets.QListWidget(self.finger_Splitter_01)
         self.finger_Splitter_01.setStretchFactor(0, 8)
@@ -233,6 +256,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.finger_Layout.addWidget(self.finger_CreateBtn)
         self.finger_Layout.addWidget(self.finger_Splitter_01)
         self.tabWidget.addTab(self.finger_Tab, 'finger')
+
 
         self.torso_Tab = QtWidgets.QWidget(self.tabWidget)
         self.torso_Layout = QtWidgets.QVBoxLayout(self.torso_Tab)
@@ -246,8 +270,14 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.torso_Splitter_02 = QtWidgets.QSplitter(self.torso_Splitter_01)
         self.torso_Splitter_02.setOrientation(QtCore.Qt.Horizontal)
         self.torso_ListWidget_01 = QtWidgets.QListWidget(self.torso_Splitter_02)
-        for item in self.torsoPoseDict:
+        for item in self.torsoPoseList:
             self.torso_ListWidget_01.addItem(item)
+        # 添加torso_ListWidget_01右击menu显示
+        self.torso_ListWidget_01.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.torso_contextMenu = QtWidgets.QMenu(self.torso_ListWidget_01)
+        self.torso_setAni = self.torso_contextMenu.addAction('set Anim')
+        self.torso_delAni = self.torso_contextMenu.addAction('del Anim')
+
         self.torso_ListWidget_02 = QtWidgets.QListWidget(self.torso_Splitter_02)
         self.torso_ListWidget_03 = QtWidgets.QListWidget(self.torso_Splitter_01)
         self.torso_Splitter_01.setStretchFactor(0, 8)
@@ -383,12 +413,28 @@ class CorrectiveBsUI(QtWidgets.QDialog):
 
         self.arm_CreateBtn.clicked.connect(self.click_armCreate_Btn)
         self.arm_ListWidget_01.itemClicked.connect(self.click_armListWidget01_item)
+        self.arm_ListWidget_01.customContextMenuRequested[QtCore.QPoint].connect(lambda :self.rightMenuShow(self.arm_contextMenu))
+        self.arm_setAni.triggered.connect(lambda : self.set_CtrlAnimation(self.arm_ListWidget_01))
+        self.arm_delAni.triggered.connect(lambda : self.delete_CtrlAnimation(self.arm_ListWidget_01))
+
         self.leg_CreateBtn.clicked.connect(self.click_legCreate_Btn)
         self.leg_ListWidget_01.itemClicked.connect(self.click_legListWidget01_item)
+        self.leg_ListWidget_01.customContextMenuRequested[QtCore.QPoint].connect(lambda :self.rightMenuShow(self.leg_contextMenu))
+        self.leg_setAni.triggered.connect(lambda: self.set_CtrlAnimation(self.leg_ListWidget_01))
+        self.leg_delAni.triggered.connect(lambda: self.delete_CtrlAnimation(self.leg_ListWidget_01))
+
         self.finger_CreateBtn.clicked.connect(self.click_fingerCreate_Btn)
         self.finger_ListWidget_01.clicked.connect(self.click_fingerListWidget01_item)
+        self.finger_ListWidget_01.customContextMenuRequested[QtCore.QPoint].connect(lambda :self.rightMenuShow(self.finger_contextMenu))
+        self.finger_setAni.triggered.connect(lambda: self.set_CtrlAnimation(self.finger_ListWidget_01))
+        self.finger_delAni.triggered.connect(lambda: self.delete_CtrlAnimation(self.finger_ListWidget_01))
+
         self.torso_CreateBtn.clicked.connect(self.click_torsoCreate_Btn)
         self.torso_ListWidget_01.clicked.connect(self.click_torsoListWidget01_item)
+        self.torso_ListWidget_01.customContextMenuRequested[QtCore.QPoint].connect(lambda :self.rightMenuShow(self.torso_contextMenu))
+        self.torso_setAni.triggered.connect(lambda: self.set_CtrlAnimation(self.torso_ListWidget_01))
+        self.torso_delAni.triggered.connect(lambda: self.delete_CtrlAnimation(self.torso_ListWidget_01))
+
         self.custom_CreateBtn.clicked.connect(self.click_customCreate_Btn)
 
 
@@ -524,54 +570,42 @@ class CorrectiveBsUI(QtWidgets.QDialog):
             self.changeTargetGeo()
 
 
+    def click_ListWidget01_item(self,baseGeo,blendShapeNode,ListWidget_01,ListWidget_02):
+
+        # 获取对应命名的target
+        self.loadTarget(baseGeo, blendShapeNode, ListWidget_01, ListWidget_02)
+        # 获取所选择的item对应的控制器的旋转数值
+        self.set_RotateLineEdit_Value(ListWidget_01)
+        # 清除所有控制器上的数值
+        self.clearCtrlRotation()
+        # 根据RotateLineEdit上的数值，设置控制器的旋转
+        self.setCtrlRotation(ListWidget_01)
+        # 获取Driver信息
+        self.loadDriverInfo(ListWidget_01)
+
+
     def click_armListWidget01_item(self):
         baseGeo = self.baseGeo_LineEdit.text()
         blendShapeNode = self.blendshape_comboBox.currentText()
-        # 获取Driver信息
-        self.loadDriverInfo(self.arm_ListWidget_01)
-        # 获取对应命名的target
-        self.loadTarget(baseGeo,blendShapeNode,self.arm_ListWidget_01,self.arm_ListWidget_02)
-        # 获取所选择的item对应的控制器的旋转数值
-        self.set_RotateLineEdit_Value(self.arm_ListWidget_01)
-        # 根据RotateLineEdit上的数值，设置控制器的旋转
-        self.setCtrlRotation(self.arm_ListWidget_01)
+        self.click_ListWidget01_item(baseGeo,blendShapeNode,self.arm_ListWidget_01,self.arm_ListWidget_02)
 
 
     def click_legListWidget01_item(self):
         baseGeo = self.baseGeo_LineEdit.text()
         blendShapeNode = self.blendshape_comboBox.currentText()
-        # 获取Driver信息
-        self.loadDriverInfo(self.leg_ListWidget_01)
-        # 获取对应命名的target
-        self.loadTarget(baseGeo, blendShapeNode, self.leg_ListWidget_01, self.leg_ListWidget_02)
-        # 获取所选择的item对应的控制器的旋转数值
-        self.set_RotateLineEdit_Value(self.leg_ListWidget_01)
-        # 根据RotateLineEdit上的数值，设置控制器的旋转
-        self.setCtrlRotation(self.leg_ListWidget_01)
+        self.click_ListWidget01_item(baseGeo, blendShapeNode, self.leg_ListWidget_01, self.leg_ListWidget_02)
 
 
     def click_fingerListWidget01_item(self):
         baseGeo = self.baseGeo_LineEdit.text()
         blendShapeNode = self.blendshape_comboBox.currentText()
-        # 获取对应命名的target
-        self.loadTarget(baseGeo, blendShapeNode, self.finger_ListWidget_01, self.finger_ListWidget_02)
-        # 获取所选择的item对应的控制器的旋转数值
-        self.set_RotateLineEdit_Value(self.finger_ListWidget_01)
-        # 根据RotateLineEdit上的数值，设置控制器的旋转
-        self.setCtrlRotation(self.finger_ListWidget_01)
+        self.click_ListWidget01_item(baseGeo, blendShapeNode, self.finger_ListWidget_01, self.finger_ListWidget_02)
 
 
     def click_torsoListWidget01_item(self):
         baseGeo = self.baseGeo_LineEdit.text()
         blendShapeNode = self.blendshape_comboBox.currentText()
-        # 获取Driver信息
-        self.loadDriverInfo(self.torso_ListWidget_01)
-        # 获取对应命名的target
-        self.loadTarget(baseGeo, blendShapeNode, self.torso_ListWidget_01, self.torso_ListWidget_02)
-        # 获取所选择的item对应的控制器的旋转数值
-        self.set_RotateLineEdit_Value(self.torso_ListWidget_01)
-        # 根据RotateLineEdit上的数值，设置控制器的旋转
-        self.setCtrlRotation(self.torso_ListWidget_01)
+        self.click_ListWidget01_item(baseGeo, blendShapeNode, self.torso_ListWidget_01, self.torso_ListWidget_02)
 
 
     def loadDriverInfo(self,ListWidget_01):
@@ -585,7 +619,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
                 self.driver_LineEdit.setText('{}.{}    {}'.format(poseGrp, currectSelectItem, round(value, 4)))
             else:
                 self.driver_LineEdit.setText('')
-                om.MGlobal_displayError('QBJ_Tip : Can not find {} !!! '.format(poseGrp))
+                # om.MGlobal_displayError('QBJ_Tip : Can not find {} !!! '.format(poseGrp))
 
 
     def loadTarget(self,baseGeo,blendShapeNode,ListWidget_01,ListWidget_02):
@@ -607,13 +641,29 @@ class CorrectiveBsUI(QtWidgets.QDialog):
                             ListWidget_02.clear()
 
 
+    def clearCtrlRotation(self):
+        # 获取所有pose,添加进allPoseList组内
+        allPoseList = list(chain(self.armPoseList,self.legPoseList,self.fingerPoseList,self.torsoPoseList))
+        fkCtrlList = []
+        # 将pose，命名转化为fkCtrl后，将rotate数值清零
+        for i in allPoseList:
+            if not i.startswith('-'):
+                fkCtrl = 'FK' + i.split('_')[0] + '_' + i.split('_')[1]
+                try:
+                    for axis in ['rx','ry','rz']:
+                        cmds.setAttr('{}.{}'.format(fkCtrl, axis), 0)
+                except:
+                    pass
+
+
     def setCtrlRotation (self,ListWidget_01):
         rotateValue = self.returnRotateValue()
         currectSelectItem = ListWidget_01.currentItem().text()
-        fkCtrl = 'FK' + currectSelectItem.split('_')[0]+'_'+currectSelectItem.split('_')[1]
-        if fkCtrl:
-            for rotate,value in rotateValue.items():
-                cmds.setAttr('{}.{}'.format(fkCtrl,rotate),float(value))
+        if not currectSelectItem.startswith('-'):
+            fkCtrl = 'FK' + currectSelectItem.split('_')[0]+'_'+currectSelectItem.split('_')[1]
+            if cmds.objExists(fkCtrl):
+                for rotate,value in rotateValue.items():
+                    cmds.setAttr('{}.{}'.format(fkCtrl,rotate),float(value))
 
 
     def returnRotateValue(self):
@@ -632,7 +682,36 @@ class CorrectiveBsUI(QtWidgets.QDialog):
     def set_RotateLineEdit_Value(self,ListWidget_01):
         currectSelectItem = ListWidget_01.currentItem().text()
         hideGrp = currectSelectItem.replace(currectSelectItem.split('_')[-1],'poseGrp_Hide')
-        valueList = cmds.getAttr('{}.{}'.format(hideGrp,currectSelectItem.split('_')[-1]))
-        self.rotate_LineEdit_01.setText(str(valueList[0][0]))
-        self.rotate_LineEdit_02.setText(str(valueList[0][1]))
-        self.rotate_LineEdit_03.setText(str(valueList[0][2]))
+        if cmds.objExists(hideGrp):
+            valueList = cmds.getAttr('{}.{}'.format(hideGrp,currectSelectItem.split('_')[-1]))
+            self.rotate_LineEdit_01.setText(str(valueList[0][0]))
+            self.rotate_LineEdit_02.setText(str(valueList[0][1]))
+            self.rotate_LineEdit_03.setText(str(valueList[0][2]))
+
+
+    def set_CtrlAnimation(self,ListWidget_01):
+        currectSelectItem = ListWidget_01.currentItem().text()
+        rotateValueDict = self.returnRotateValue()
+        if not currectSelectItem.startswith('-'):
+            fkCtrl = 'FK' + currectSelectItem.split('_')[0]+'_'+currectSelectItem.split('_')[1]
+            if cmds.objExists(fkCtrl):
+                for axis ,value in rotateValueDict.items():
+                    animNode =cmds.createNode('animCurveTA',name = '{}_{}'.format(fkCtrl,axis))
+                    cmds.connectAttr('{}.output'.format(animNode),'{}.{}'.format(fkCtrl,axis))
+                    cmds.setKeyframe(animNode,time=1,value = 0)
+                    cmds.setKeyframe(animNode, time=20, value=float(value))
+
+
+    def delete_CtrlAnimation(self,ListWidget_01):
+        currectSelectItem = ListWidget_01.currentItem().text()
+        if not currectSelectItem.startswith('-'):
+            fkCtrl = 'FK' + currectSelectItem.split('_')[0]+'_'+currectSelectItem.split('_')[1]
+            if cmds.objExists(fkCtrl):
+                animNodeList = cmds.listConnections(fkCtrl,type='animCurveTA')
+                if animNodeList:
+                    cmds.delete(animNodeList)
+
+
+    def rightMenuShow(self,contextMenu):
+        contextMenu.exec_(QtGui.QCursor.pos())
+
