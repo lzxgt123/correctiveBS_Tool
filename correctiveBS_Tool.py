@@ -8,7 +8,7 @@ launch :
         import correctiveBS_Tool as QBJ_correctiveBS_Tool
         reload(QBJ_correctiveBS_Tool)
 '''
-
+import collections
 import maya.cmds as cmds
 import maya.OpenMaya as om
 import system.advSystem as adv
@@ -20,6 +20,54 @@ reload(user)
 
 
 class CorrectiveBsTool(object):
+
+    default_attribute_list = ['.tx', '.ty', '.tz', '.rx', '.ry', '.rz', '.sx', '.sy', '.sz','.v']
+    L_fingerPoseList = []
+    L_fingerPoseDict = collections.OrderedDict(L_fingerPoseList)
+    L_fingerPoseDict['IndexFinger1_L_Up']=[0,-45,0]
+    L_fingerPoseDict['IndexFinger1_L_Down']=[0,90,0]
+    L_fingerPoseDict['IndexFinger2_L_Down']=[0,90,0]
+    L_fingerPoseDict['IndexFinger3_L_Down']=[0,90,0]
+    L_fingerPoseDict['MiddleFinger1_L_Up']=[0,-45,0]
+    L_fingerPoseDict['MiddleFinger1_L_Down']=[0,90,0]
+    L_fingerPoseDict['MiddleFinger2_L_Down']=[0,90,0]
+    L_fingerPoseDict['MiddleFinger3_L_Down']=[0,90,0]
+    L_fingerPoseDict['RingFinger1_L_Up']=[0,-45,0]
+    L_fingerPoseDict['RingFinger1_L_Down']=[0,90,0]
+    L_fingerPoseDict['RingFinger2_L_Down']=[0,90,0]
+    L_fingerPoseDict['RingFinger3_L_Down']=[0,90,0]
+    L_fingerPoseDict['PinkyFinger1_L_Up']=[0,-45,0]
+    L_fingerPoseDict['PinkyFinger1_L_Down']=[0,90,0]
+    L_fingerPoseDict['PinkyFinger2_L_Down']=[0,90,0]
+    L_fingerPoseDict['PinkyFinger3_L_Down']=[0,90,0]
+    L_fingerPoseDict['ThumbFinger1_L_Up']=[0,-45,0]
+    L_fingerPoseDict['ThumbFinger1_L_Down']=[0,20,0]
+    L_fingerPoseDict['ThumbFinger2_L_Down']=[0,45,0]
+    L_fingerPoseDict['ThumbFinger3_L_Down']=[0,90,0]
+
+    R_fingerPoseList = []
+    R_fingerPoseDict = collections.OrderedDict(R_fingerPoseList)
+    R_fingerPoseDict['IndexFinger1_R_Up'] = [0, -45, 0]
+    R_fingerPoseDict['IndexFinger1_R_Down'] = [0, 90, 0]
+    R_fingerPoseDict['IndexFinger2_R_Down'] = [0, 90, 0]
+    R_fingerPoseDict['IndexFinger3_R_Down'] = [0, 90, 0]
+    R_fingerPoseDict['MiddleFinger1_R_Up'] = [0, -45, 0]
+    R_fingerPoseDict['MiddleFinger1_R_Down'] = [0, 90, 0]
+    R_fingerPoseDict['MiddleFinger2_R_Down'] = [0, 90, 0]
+    R_fingerPoseDict['MiddleFinger3_R_Down'] = [0, 90, 0]
+    R_fingerPoseDict['RingFinger1_R_Up'] = [0, -45, 0]
+    R_fingerPoseDict['RingFinger1_R_Down'] = [0, 90, 0]
+    R_fingerPoseDict['RingFinger2_R_Down'] = [0, 90, 0]
+    R_fingerPoseDict['RingFinger3_R_Down'] = [0, 90, 0]
+    R_fingerPoseDict['PinkyFinger1_R_Up'] = [0, -45, 0]
+    R_fingerPoseDict['PinkyFinger1_R_Down'] = [0, 90, 0]
+    R_fingerPoseDict['PinkyFinger2_R_Down'] = [0, 90, 0]
+    R_fingerPoseDict['PinkyFinger3_R_Down'] = [0, 90, 0]
+    R_fingerPoseDict['ThumbFinger1_R_Up'] = [0, -45, 0]
+    R_fingerPoseDict['ThumbFinger1_R_Down'] = [0, 20, 0]
+    R_fingerPoseDict['ThumbFinger2_R_Down'] = [0, 45, 0]
+    R_fingerPoseDict['ThumbFinger3_R_Down'] = [0, 90, 0]
+
 
     def __init__(self):
         pass
@@ -113,19 +161,68 @@ class CorrectiveBsTool(object):
             cmds.delete(targetGeo)
 
 
-    # def create_armTargets(self,targetGeo):
-    #
-    #     pass
-    #
-    # def create_legTargets(self,targetGeo):
-    #     pass
-    #
-    # def create_fingerTargets(self,targetGeo):
-    #     pass
-    #
-    # def create_torsoTargets(self,targetGeo):
-    #     pass
-    #
-    #
-    # def connect_to_poseGrp(self):
-    #     pass
+    def create_finger_PoseGrp(self,joint,fingerPoseDict):
+        allPoseGrp = 'QBJ_all_PoseGrp'
+        # 如果没有allPoseGrp，就创建一个
+        if not cmds.objExists(allPoseGrp):
+            allPoseGrp = cmds.group(name='QBJ_all_PoseGrp',empty=True,world=True)
+            cmds.select(cl=True)
+
+        # 生成finger_poseGrp
+        if not cmds.objExists('{}_poseGrp'.format(joint)):
+            finger_poseGrp = cmds.group(name='{}_poseGrp'.format(joint),empty=True, parent=allPoseGrp)
+            cmds.select(cl=True)
+            finger_poseHide = cmds.group(name='{}_poseGrp_Hide'.format(joint), empty=True,parent=finger_poseGrp)
+
+            for attr in self.default_attribute_list:
+                cmds.setAttr('{}{}'.format(finger_poseGrp, attr), lock=True, keyable=False, channelBox=False)
+                cmds.setAttr('{}{}'.format(finger_poseHide, attr), lock=True, keyable=False, channelBox=False)
+
+            # 将fingerPoseList中的item，添加进finger_poseGrp的属性
+            animNodeList = []
+            for pose,value in fingerPoseDict.items():
+                cmds.addAttr(finger_poseGrp,longName = pose,attributeType='double',keyable=True)
+
+                # 将fingerPoseList中的pose,value，添加进finger_poseGrp_Hide的,并隐藏
+                firstValue = value[0]
+                secondValue = value[1]
+                thirdValue = value[2]
+
+                cmds.addAttr(finger_poseHide, longName='{}'.format(pose),
+                             attributeType='double3',
+                             keyable=False, readable=False)
+
+                cmds.addAttr(finger_poseHide, longName='{}_01'.format(pose),
+                             attributeType='double',
+                             parent=pose,
+                             keyable=False)
+
+                cmds.addAttr(finger_poseHide, longName='{}_02'.format(pose),
+                             attributeType='double',
+                             parent=pose,
+                             keyable=False)
+
+                cmds.addAttr(finger_poseHide, longName='{}_03'.format(pose),
+                             attributeType='double',
+                             parent=pose,
+                             keyable=False)
+
+                cmds.setAttr('{}.{}'.format(finger_poseHide, pose),
+                             firstValue, secondValue, thirdValue, keyable=False, channelBox=False)
+
+                # 创建animNode节点
+                animNode = cmds.createNode('animCurveUU',name='{}_animUU'.format(pose))
+                animNodeList.append(animNode)
+                # 设置animNode节点
+                cmds.setAttr('{}.preInfinity'.format(animNode), 0)
+                cmds.setAttr('{}.postInfinity'.format(animNode), 0)
+
+                cmds.setKeyframe(animNode,float=0,value=0, itt='Linear', ott='Linear')
+                cmds.setKeyframe(animNode, float=value[1], value=1, itt='Linear',
+                                 ott='Linear')
+                cmds.connectAttr('{}.output'.format(animNode),'{}.{}'.format(finger_poseGrp,pose))
+
+            # 将骨骼上的旋转值，连接到对应的animNode上
+            for node in animNodeList:
+                fingerJoint =  node.split('_')[0] + '_' +node.split('_')[1]
+                cmds.connectAttr('{}.ry'.format(fingerJoint),'{}.input'.format(node))
