@@ -108,6 +108,16 @@ class CorrectiveBsUI(QtWidgets.QDialog):
             pass
 
 
+    def check_ifnot_PoseGrp(self,ListWidget_01):
+        poseGrpList = cmds.ls('*poseGrp')
+        for i in range(ListWidget_01.count()):
+            pose = ListWidget_01.item(i)
+            if not pose.text().startswith('-'):
+                poseGrp = pose.text().split('_')[0] + '_' + pose.text().split('_')[1] + '_' + 'poseGrp'
+                if poseGrp not in poseGrpList:
+                    pose.setFlags(pose.flags() & ~QtCore.Qt.ItemIsEnabled)
+
+
     def showUI(self):
         if cmds.window(self.WINDOW_TITLE, exists=True):
             cmds.deleteUI(self.WINDOW_TITLE)
@@ -182,8 +192,12 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.arm_Splitter_02 = QtWidgets.QSplitter(self.arm_Splitter_01)
         self.arm_Splitter_02.setOrientation(QtCore.Qt.Horizontal)
         self.arm_ListWidget_01 = QtWidgets.QListWidget(self.arm_Splitter_02)
+        # 将 pose添加进listWidget中
         for item in self.armPoseList:
             self.arm_ListWidget_01.addItem(item)
+
+        # 将没有对应poseGrp的item设置为不可选状态
+        self.check_ifnot_PoseGrp(self.arm_ListWidget_01)
 
         # 添加leg_ListWidget_01右击menu显示
         self.arm_ListWidget_01.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
@@ -211,8 +225,12 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.leg_Splitter_02 = QtWidgets.QSplitter(self.leg_Splitter_01)
         self.leg_Splitter_02.setOrientation(QtCore.Qt.Horizontal)
         self.leg_ListWidget_01 = QtWidgets.QListWidget(self.leg_Splitter_02)
+        # 将 pose添加进listWidget中
         for item in self.legPoseList:
             self.leg_ListWidget_01.addItem(item)
+
+        # 将没有对应poseGrp的item设置为不可选状态
+        self.check_ifnot_PoseGrp(self.leg_ListWidget_01)
 
         # 添加leg_ListWidget_01右击menu显示
         self.leg_ListWidget_01.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
@@ -240,6 +258,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.finger_Splitter_02 = QtWidgets.QSplitter(self.finger_Splitter_01)
         self.finger_Splitter_02.setOrientation(QtCore.Qt.Horizontal)
         self.finger_ListWidget_01 = QtWidgets.QListWidget(self.finger_Splitter_02)
+        # 将 pose添加进listWidget中
         for item in self.fingerPoseList:
             self.finger_ListWidget_01.addItem(item)
 
@@ -270,8 +289,13 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.torso_Splitter_02 = QtWidgets.QSplitter(self.torso_Splitter_01)
         self.torso_Splitter_02.setOrientation(QtCore.Qt.Horizontal)
         self.torso_ListWidget_01 = QtWidgets.QListWidget(self.torso_Splitter_02)
+        # 将 pose添加进listWidget中
         for item in self.torsoPoseList:
             self.torso_ListWidget_01.addItem(item)
+
+        # 将没有对应poseGrp的item设置为不可选状态
+        self.check_ifnot_PoseGrp(self.torso_ListWidget_01)
+
         # 添加torso_ListWidget_01右击menu显示
         self.torso_ListWidget_01.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.torso_contextMenu = QtWidgets.QMenu(self.torso_ListWidget_01)
@@ -679,7 +703,15 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         return rotateValue
 
 
+    def clear_RotateLineEdit_Value(self):
+        # 清除rotate_LineEdit上的数据
+        self.rotate_LineEdit_01.setText('0.0')
+        self.rotate_LineEdit_02.setText('0.0')
+        self.rotate_LineEdit_03.setText('0.0')
+
+
     def set_RotateLineEdit_Value(self,ListWidget_01):
+        self.clear_RotateLineEdit_Value()
         currectSelectItem = ListWidget_01.currentItem().text()
         hideGrp = currectSelectItem.replace(currectSelectItem.split('_')[-1],'poseGrp_Hide')
         if cmds.objExists(hideGrp):
@@ -714,4 +746,5 @@ class CorrectiveBsUI(QtWidgets.QDialog):
 
     def rightMenuShow(self,contextMenu):
         contextMenu.exec_(QtGui.QCursor.pos())
+
 
