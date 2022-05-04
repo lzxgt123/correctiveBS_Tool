@@ -204,6 +204,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.arm_contextMenu = QtWidgets.QMenu(self.arm_ListWidget_01)
         self.arm_setAni = self.arm_contextMenu.addAction('set Animation')
         self.arm_delAni = self.arm_contextMenu.addAction('del Animation')
+        self.arm_updatePose = self.arm_contextMenu.addAction('update Pose')
 
         self.arm_ListWidget_02 = QtWidgets.QListWidget(self.arm_Splitter_01)
         # self.arm_ListWidget_03 = QtWidgets.QListWidget(self.arm_Splitter_01)
@@ -237,6 +238,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.leg_contextMenu = QtWidgets.QMenu(self.leg_ListWidget_01)
         self.leg_setAni = self.leg_contextMenu.addAction('set Animation')
         self.leg_delAni = self.leg_contextMenu.addAction('del Animation')
+        self.leg_updatePose = self.leg_contextMenu.addAction('update Pose')
 
         self.leg_ListWidget_02 = QtWidgets.QListWidget(self.leg_Splitter_01)
         # self.leg_ListWidget_03 = QtWidgets.QListWidget(self.leg_Splitter_01)
@@ -267,6 +269,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.finger_contextMenu = QtWidgets.QMenu(self.finger_ListWidget_01)
         self.finger_setAni = self.finger_contextMenu.addAction('set Animation')
         self.finger_delAni = self.finger_contextMenu.addAction('del Animation')
+        self.finger_updatePose = self.finger_contextMenu.addAction('update Pose')
 
         self.finger_ListWidget_02 = QtWidgets.QListWidget(self.finger_Splitter_01)
         # self.finger_ListWidget_03 = QtWidgets.QListWidget(self.finger_Splitter_01)
@@ -301,6 +304,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.torso_contextMenu = QtWidgets.QMenu(self.torso_ListWidget_01)
         self.torso_setAni = self.torso_contextMenu.addAction('set Animation')
         self.torso_delAni = self.torso_contextMenu.addAction('del Animation')
+        self.torso_updatePose = self.torso_contextMenu.addAction('update Pose')
 
         self.torso_ListWidget_02 = QtWidgets.QListWidget(self.torso_Splitter_01)
         # self.torso_ListWidget_03 = QtWidgets.QListWidget(self.torso_Splitter_01)
@@ -438,28 +442,31 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.arm_CreateBtn.clicked.connect(self.click_armCreate_Btn)
         self.arm_ListWidget_01.itemClicked.connect(self.click_armListWidget01_item)
         self.arm_ListWidget_01.customContextMenuRequested[QtCore.QPoint].connect(lambda :self.rightMenuShow(self.arm_contextMenu))
-        self.arm_setAni.triggered.connect(lambda : self.set_CtrlAnimation(self.arm_ListWidget_01))
-        self.arm_delAni.triggered.connect(lambda : self.delete_CtrlAnimation(self.arm_ListWidget_01))
+        self.arm_setAni.triggered.connect(lambda : self.click_setAnimation(self.arm_ListWidget_01))
+        self.arm_delAni.triggered.connect(lambda : self.click_delAnimation(self.arm_ListWidget_01))
+        self.arm_updatePose.triggered.connect(lambda : self.click_updatePose(self.arm_ListWidget_01))
 
         self.leg_CreateBtn.clicked.connect(self.click_legCreate_Btn)
         self.leg_ListWidget_01.itemClicked.connect(self.click_legListWidget01_item)
         self.leg_ListWidget_01.customContextMenuRequested[QtCore.QPoint].connect(lambda :self.rightMenuShow(self.leg_contextMenu))
-        self.leg_setAni.triggered.connect(lambda: self.set_CtrlAnimation(self.leg_ListWidget_01))
-        self.leg_delAni.triggered.connect(lambda: self.delete_CtrlAnimation(self.leg_ListWidget_01))
+        self.leg_setAni.triggered.connect(lambda: self.click_setAnimation(self.leg_ListWidget_01))
+        self.leg_delAni.triggered.connect(lambda: self.click_delAnimation(self.leg_ListWidget_01))
+        self.leg_updatePose.triggered.connect(lambda:self.click_updatePose(self.leg_ListWidget_01))
 
         self.tabWidget.currentChanged.connect(self.tabWidget_changeEvent)
 
         self.finger_CreateBtn.clicked.connect(self.click_fingerCreate_Btn)
         self.finger_ListWidget_01.clicked.connect(self.click_fingerListWidget01_item)
         self.finger_ListWidget_01.customContextMenuRequested[QtCore.QPoint].connect(lambda :self.rightMenuShow(self.finger_contextMenu))
-        self.finger_setAni.triggered.connect(lambda: self.set_CtrlAnimation(self.finger_ListWidget_01))
-        self.finger_delAni.triggered.connect(lambda: self.delete_CtrlAnimation(self.finger_ListWidget_01))
+        self.finger_setAni.triggered.connect(lambda: self.click_setAnimation(self.finger_ListWidget_01))
+        self.finger_delAni.triggered.connect(lambda: self.click_delAnimation(self.finger_ListWidget_01))
 
         self.torso_CreateBtn.clicked.connect(self.click_torsoCreate_Btn)
         self.torso_ListWidget_01.clicked.connect(self.click_torsoListWidget01_item)
         self.torso_ListWidget_01.customContextMenuRequested[QtCore.QPoint].connect(lambda :self.rightMenuShow(self.torso_contextMenu))
-        self.torso_setAni.triggered.connect(lambda: self.set_CtrlAnimation(self.torso_ListWidget_01))
-        self.torso_delAni.triggered.connect(lambda: self.delete_CtrlAnimation(self.torso_ListWidget_01))
+        self.torso_setAni.triggered.connect(lambda: self.click_setAnimation(self.torso_ListWidget_01))
+        self.torso_delAni.triggered.connect(lambda: self.click_delAnimation(self.torso_ListWidget_01))
+        self.torso_updatePose.triggered.connect(lambda : self.click_updatePose(self.torso_ListWidget_01))
 
         self.custom_CreateBtn.clicked.connect(self.click_customCreate_Btn)
 
@@ -743,7 +750,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
             self.rotate_LineEdit_03.setText(str(valueList[0][2]))
 
 
-    def set_CtrlAnimation(self,ListWidget_01):
+    def click_setAnimation(self,ListWidget_01):
         currectSelectItem = ListWidget_01.currentItem().text()
         rotateValueDict = self.returnRotateValue()
         # 将时间滑块的范围调整成1-25帧
@@ -762,7 +769,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
                     cmds.setKeyframe(animNode, time=20, value=float(value))
 
 
-    def delete_CtrlAnimation(self,ListWidget_01):
+    def click_delAnimation(self,ListWidget_01):
         currectSelectItem = ListWidget_01.currentItem().text()
         if not currectSelectItem.startswith('-'):
             fkCtrl = 'FK' + currectSelectItem.split('_')[0]+'_'+currectSelectItem.split('_')[1]
@@ -774,6 +781,13 @@ class CorrectiveBsUI(QtWidgets.QDialog):
                 # 删除控制器动画之后，将控制器上的数值恢复默认
                 for axis in ['rx','ry','rz']:
                     cmds.setAttr('{}.{}'.format(fkCtrl,axis),0)
+
+
+    def click_updatePose(self, ListWidget_01):
+        tool.update_poseHide_Info(ListWidget_01)
+        tool.update_PoseLocPosition(ListWidget_01)
+        tool.update_animNode(ListWidget_01)
+        om.MGlobal_displayError('QBJ_Tip : Update pose successfully !')
 
 
     def loadFingerDriverInfo(self):
@@ -801,5 +815,3 @@ class CorrectiveBsUI(QtWidgets.QDialog):
                 self.rotate_LineEdit_03.setText(str(valueList[0][2]))
 
 
-    def updatePose(self):
-        pass
