@@ -185,7 +185,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.arm_Layout.setSizeConstraint(QtWidgets.QLayout.SetDefaultConstraint)
         self.arm_Layout.setContentsMargins(2, 2, 2, 2)
         self.arm_Layout.setSpacing(3)
-        self.arm_CreateBtn = QtWidgets.QPushButton('Create')
+        # self.arm_CreateBtn = QtWidgets.QPushButton('Create')
         self.arm_Splitter_01 = QtWidgets.QSplitter(self.arm_Tab)
         self.arm_Splitter_01.setMinimumSize(QtCore.QSize(400, 0))
         self.arm_Splitter_01.setOrientation(QtCore.Qt.Vertical)
@@ -210,7 +210,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         # self.arm_ListWidget_03 = QtWidgets.QListWidget(self.arm_Splitter_01)
         self.arm_Splitter_01.setStretchFactor(0, 7)
         self.arm_Splitter_01.setStretchFactor(1, 3)
-        self.arm_Layout.addWidget(self.arm_CreateBtn)
+        # self.arm_Layout.addWidget(self.arm_CreateBtn)
         self.arm_Layout.addWidget(self.arm_Splitter_01)
         self.tabWidget.addTab(self.arm_Tab,'Arm')
 
@@ -219,7 +219,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.leg_Layout.setSizeConstraint(QtWidgets.QLayout.SetDefaultConstraint)
         self.leg_Layout.setContentsMargins(2, 2, 2, 2)
         self.leg_Layout.setSpacing(3)
-        self.leg_CreateBtn = QtWidgets.QPushButton('Create')
+        # self.leg_CreateBtn = QtWidgets.QPushButton('Create')
         self.leg_Splitter_01 = QtWidgets.QSplitter(self.leg_Tab)
         self.leg_Splitter_01.setMinimumSize(QtCore.QSize(400, 0))
         self.leg_Splitter_01.setOrientation(QtCore.Qt.Vertical)
@@ -244,7 +244,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         # self.leg_ListWidget_03 = QtWidgets.QListWidget(self.leg_Splitter_01)
         self.leg_Splitter_01.setStretchFactor(0, 7)
         self.leg_Splitter_01.setStretchFactor(1, 3)
-        self.leg_Layout.addWidget(self.leg_CreateBtn)
+        # self.leg_Layout.addWidget(self.leg_CreateBtn)
         self.leg_Layout.addWidget(self.leg_Splitter_01)
         self.tabWidget.addTab(self.leg_Tab, 'leg')
 
@@ -253,7 +253,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.finger_Layout.setSizeConstraint(QtWidgets.QLayout.SetDefaultConstraint)
         self.finger_Layout.setContentsMargins(2, 2, 2, 2)
         self.finger_Layout.setSpacing(3)
-        self.finger_CreateBtn = QtWidgets.QPushButton('Create')
+        # self.finger_CreateBtn = QtWidgets.QPushButton('Create')
         self.finger_Splitter_01 = QtWidgets.QSplitter(self.finger_Tab)
         self.finger_Splitter_01.setMinimumSize(QtCore.QSize(400, 0))
         self.finger_Splitter_01.setOrientation(QtCore.Qt.Vertical)
@@ -275,7 +275,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         # self.finger_ListWidget_03 = QtWidgets.QListWidget(self.finger_Splitter_01)
         self.finger_Splitter_01.setStretchFactor(0, 7)
         self.finger_Splitter_01.setStretchFactor(1, 3)
-        self.finger_Layout.addWidget(self.finger_CreateBtn)
+        # self.finger_Layout.addWidget(self.finger_CreateBtn)
         self.finger_Layout.addWidget(self.finger_Splitter_01)
         self.tabWidget.addTab(self.finger_Tab, 'finger')
 
@@ -285,7 +285,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.torso_Layout.setSizeConstraint(QtWidgets.QLayout.SetDefaultConstraint)
         self.torso_Layout.setContentsMargins(2, 2, 2, 2)
         self.torso_Layout.setSpacing(3)
-        self.torso_CreateBtn = QtWidgets.QPushButton('Create')
+        # self.torso_CreateBtn = QtWidgets.QPushButton('Create')
         self.torso_Splitter_01 = QtWidgets.QSplitter(self.torso_Tab)
         self.torso_Splitter_01.setMinimumSize(QtCore.QSize(400, 0))
         self.torso_Splitter_01.setOrientation(QtCore.Qt.Vertical)
@@ -310,7 +310,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         # self.torso_ListWidget_03 = QtWidgets.QListWidget(self.torso_Splitter_01)
         self.torso_Splitter_01.setStretchFactor(0, 7)
         self.torso_Splitter_01.setStretchFactor(1, 3)
-        self.torso_Layout.addWidget(self.torso_CreateBtn)
+        # self.torso_Layout.addWidget(self.torso_CreateBtn)
         self.torso_Layout.addWidget(self.torso_Splitter_01)
         self.tabWidget.addTab(self.torso_Tab, 'torso')
 
@@ -319,7 +319,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.custom_Layout.setSizeConstraint(QtWidgets.QLayout.SetDefaultConstraint)
         self.custom_Layout.setContentsMargins(2, 2, 2, 2)
         self.custom_Layout.setSpacing(3)
-        self.custom_CreateBtn = QtWidgets.QPushButton('Create')
+        # self.custom_CreateBtn = QtWidgets.QPushButton('Create')
         self.custom_Splitter_01 = QtWidgets.QSplitter(self.custom_Tab)
         self.custom_Splitter_01.setMinimumSize(QtCore.QSize(400, 0))
         self.custom_Splitter_01.setOrientation(QtCore.Qt.Vertical)
@@ -330,7 +330,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         # self.custom_ListWidget_03 = QtWidgets.QListWidget(self.custom_Splitter_01)
         self.custom_Splitter_01.setStretchFactor(0, 7)
         self.custom_Splitter_01.setStretchFactor(1, 3)
-        self.custom_Layout.addWidget(self.custom_CreateBtn)
+        # self.custom_Layout.addWidget(self.custom_CreateBtn)
         self.custom_Layout.addWidget(self.custom_Splitter_01)
         self.tabWidget.addTab(self.custom_Tab, 'custom')
 
@@ -353,9 +353,13 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.rotate_LineEdit_03.setText('0.0')
         self.rotate_LineEdit_03.setReadOnly(True)
 
+        # 创建镜像选项按钮 组件
+        self.mirror_CB = QtWidgets.QCheckBox('Mirror')
+        self.mirror_CB.setChecked(True)
+
         # 创建修型按钮 组件
         self.sculpt_Btn = QtWidgets.QPushButton('Sculpt')
-        self.mirror_Btn = QtWidgets.QPushButton('Mirror')
+        # self.mirror_Btn = QtWidgets.QPushButton('Mirror')
         self.exit_Btn = QtWidgets.QPushButton('Exit')
 
         # 创建分割线 组件
@@ -394,11 +398,16 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.type_layout.addWidget(self.humanIK_radioBtn)
         # self.type_layout.addWidget(self.defined_radionBtn)
 
+        # 创建mirror布局
+        self.mirror_Layout = QtWidgets.QHBoxLayout()
+        self.mirror_Layout.addWidget(self.mirror_CB)
+
         # 创建sculpt布局
         self.sculpt_Layout = QtWidgets.QHBoxLayout()
         self.sculpt_Layout.setContentsMargins(4,2,4,2)
+
         self.sculpt_Layout.addWidget(self.sculpt_Btn)
-        self.sculpt_Layout.addWidget(self.mirror_Btn)
+        # self.sculpt_Layout.addWidget(self.mirror_Btn)
         self.sculpt_Layout.addWidget(self.exit_Btn)
 
         # 创建驱动控制 布局
@@ -424,6 +433,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         main_Layout.addLayout(self.driver_layout)
         main_Layout.addWidget(self.tabWidget)
         main_Layout.addLayout(self.rotate_layout)
+        main_Layout.addLayout(self.mirror_Layout)
         main_Layout.addLayout(self.sculpt_Layout)
         main_Layout.addWidget(self.separator_02)
         main_Layout.addWidget(self.copyRight_label)
@@ -436,17 +446,17 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         # self.add_Btn.clicked.connect(self.click_addBS_Btn)
         self.del_Btn.clicked.connect(self.click_delBs_Btn)
         self.sculpt_Btn.clicked.connect(self.click_sculpt_Btn)
-        self.mirror_Btn.clicked.connect(self.click_mirror_Btn)
+        # self.mirror_Btn.clicked.connect(self.click_mirror_Btn)
         self.exit_Btn.clicked.connect(self.click_exit_Btn)
 
-        self.arm_CreateBtn.clicked.connect(self.click_armCreate_Btn)
+        # self.arm_CreateBtn.clicked.connect(self.click_armCreate_Btn)
         self.arm_ListWidget_01.itemClicked.connect(self.click_armListWidget01_item)
         self.arm_ListWidget_01.customContextMenuRequested[QtCore.QPoint].connect(lambda :self.rightMenuShow(self.arm_contextMenu))
         self.arm_setAni.triggered.connect(lambda : self.click_setAnimation(self.arm_ListWidget_01))
         self.arm_delAni.triggered.connect(lambda : self.click_delAnimation(self.arm_ListWidget_01))
         self.arm_updatePose.triggered.connect(lambda : self.click_updatePose(self.arm_ListWidget_01))
 
-        self.leg_CreateBtn.clicked.connect(self.click_legCreate_Btn)
+        # self.leg_CreateBtn.clicked.connect(self.click_legCreate_Btn)
         self.leg_ListWidget_01.itemClicked.connect(self.click_legListWidget01_item)
         self.leg_ListWidget_01.customContextMenuRequested[QtCore.QPoint].connect(lambda :self.rightMenuShow(self.leg_contextMenu))
         self.leg_setAni.triggered.connect(lambda: self.click_setAnimation(self.leg_ListWidget_01))
@@ -455,20 +465,21 @@ class CorrectiveBsUI(QtWidgets.QDialog):
 
         self.tabWidget.currentChanged.connect(self.tabWidget_changeEvent)
 
-        self.finger_CreateBtn.clicked.connect(self.click_fingerCreate_Btn)
+        # self.finger_CreateBtn.clicked.connect(self.click_fingerCreate_Btn)
         self.finger_ListWidget_01.clicked.connect(self.click_fingerListWidget01_item)
         self.finger_ListWidget_01.customContextMenuRequested[QtCore.QPoint].connect(lambda :self.rightMenuShow(self.finger_contextMenu))
         self.finger_setAni.triggered.connect(lambda: self.click_setAnimation(self.finger_ListWidget_01))
         self.finger_delAni.triggered.connect(lambda: self.click_delAnimation(self.finger_ListWidget_01))
+        self.finger_updatePose.triggered.connect(self.click_updateFingerPose)
 
-        self.torso_CreateBtn.clicked.connect(self.click_torsoCreate_Btn)
+        # self.torso_CreateBtn.clicked.connect(self.click_torsoCreate_Btn)
         self.torso_ListWidget_01.clicked.connect(self.click_torsoListWidget01_item)
         self.torso_ListWidget_01.customContextMenuRequested[QtCore.QPoint].connect(lambda :self.rightMenuShow(self.torso_contextMenu))
         self.torso_setAni.triggered.connect(lambda: self.click_setAnimation(self.torso_ListWidget_01))
         self.torso_delAni.triggered.connect(lambda: self.click_delAnimation(self.torso_ListWidget_01))
         self.torso_updatePose.triggered.connect(lambda : self.click_updatePose(self.torso_ListWidget_01))
 
-        self.custom_CreateBtn.clicked.connect(self.click_customCreate_Btn)
+        # self.custom_CreateBtn.clicked.connect(self.click_customCreate_Btn)
 
 
     def tabWidget_changeEvent(self,index):
@@ -530,51 +541,8 @@ class CorrectiveBsUI(QtWidgets.QDialog):
             om.MGlobal_displayInfo('QBJ_Tip : Delete blendShape Node successfully !')
 
 
-    def click_armCreate_Btn(self):
-        baseGeo = self.baseGeo_LineEdit.text()
-        targetGeo = self.targetGeo_LineEdit.text()
-        blendShapeNode = self.blendshape_comboBox.currentText()
-        currectSysytem = self.radionBtn_Grp.checkedButton().text()
-
-
-        print 'armCreate'
-
-
-    def click_legCreate_Btn(self):
-        baseGeo = self.baseGeo_LineEdit.text()
-        targetGeo = self.targetGeo_LineEdit.text()
-        blendShapeNode = self.blendshape_comboBox.currentText()
-        currectSysytem = self.radionBtn_Grp.checkedButton().text()
-        print 'legCreate'
-
-
-    def click_fingerCreate_Btn(self):
-        baseGeo = self.baseGeo_LineEdit.text()
-        targetGeo = self.targetGeo_LineEdit.text()
-        blendShapeNode = self.blendshape_comboBox.currentText()
-        currectSysytem = self.radionBtn_Grp.checkedButton().text()
-        print 'fingerCreate'
-
-
-    def click_torsoCreate_Btn(self):
-        baseGeo = self.baseGeo_LineEdit.text()
-        targetGeo = self.targetGeo_LineEdit.text()
-        blendShapeNode = self.blendshape_comboBox.currentText()
-        currectSysytem = self.radionBtn_Grp.checkedButton().text()
-        print 'torsoCreate'
-
-
-    def click_customCreate_Btn(self):
-        print 'customCreate'
-        pass
-
     def click_sculpt_Btn(self):
         print 'sculpt'
-        pass
-
-
-    def click_mirror_Btn(self):
-        print 'mirror'
         pass
 
 
@@ -740,6 +708,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
 
 
     def set_RotateLineEdit_Value(self,ListWidget_01):
+        self.driver_LineEdit.clear()
         self.clear_RotateLineEdit_Value()
         currectSelectItem = ListWidget_01.currentItem().text()
         hideGrp = currectSelectItem.replace(currectSelectItem.split('_')[-1],'poseGrp_Hide')
@@ -787,7 +756,13 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         tool.update_poseHide_Info(ListWidget_01)
         tool.update_PoseLocPosition(ListWidget_01)
         tool.update_animNode(ListWidget_01)
-        om.MGlobal_displayError('QBJ_Tip : Update pose successfully !')
+        om.MGlobal_displayInfo('QBJ_Tip : Update pose successfully !')
+
+
+    def  click_updateFingerPose(self):
+        tool.update_fingerPoseHide_Info(self.finger_ListWidget_01)
+        tool.update_fingerAnimNode(self.finger_ListWidget_01)
+        om.MGlobal_displayInfo('QBJ_Tip : Update pose successfully !')
 
 
     def loadFingerDriverInfo(self):
@@ -803,12 +778,13 @@ class CorrectiveBsUI(QtWidgets.QDialog):
 
 
     def set_fingerRotateLineEdit_Value(self):
+        self.driver_LineEdit.clear()
         self.clear_RotateLineEdit_Value()
         currectSelectItem = self.finger_ListWidget_01.currentItem().text()
         hideGrp = 'Finger_L_poseGrp_Hide'
         if cmds.objExists(hideGrp):
             if not currectSelectItem.startswith('-'):
-                print currectSelectItem
+
                 valueList = cmds.getAttr('{}.{}'.format(hideGrp,currectSelectItem))
                 self.rotate_LineEdit_01.setText(str(valueList[0][0]))
                 self.rotate_LineEdit_02.setText(str(valueList[0][1]))

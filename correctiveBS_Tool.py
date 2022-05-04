@@ -294,7 +294,36 @@ class CorrectiveBsTool(object):
         direction = currectSelectItem.split('_')[-1]
         valueList =  cmds.getAttr('{}.{}'.format(poseGrp_Hide,direction))
         valueIndex = self.angleReadableDict[direction]
-        print valueList,valueIndex
         cmds.keyframe(current_animNode, index=(1,1),floatChange= valueList[0][valueIndex],option='over', absolute=True)
 
 
+    def update_fingerPoseHide_Info(self,ListWidget_01):
+        # 获取当前选择到的控制器
+        selectCtrl = cmds.ls(sl=True, type='transform')
+
+        # 获取当前选择的ListWidget item
+        currectSelectItem = ListWidget_01.currentItem().text()
+        if not currectSelectItem.startswith('-'):
+            fkCtrl = 'FK' + currectSelectItem.split('_')[0] + '_' + currectSelectItem.split('_')[1]
+            poseGrp_Hide = 'Finger_L_poseGrp_Hide'
+
+            # 如果所选的控制器是正确的控制器，则获取此时控制器上的rotate数值，并将数值重新设置给对应的属性
+            if selectCtrl:
+                if selectCtrl[0] == fkCtrl:
+                    valueList = [cmds.getAttr('{}.{}'.format(selectCtrl[0], axis)) for axis in ['rx', 'ry', 'rz']]
+                    cmds.setAttr('{}.{}'.format(poseGrp_Hide, currectSelectItem), valueList[0], valueList[1], valueList[2])
+                else:
+                    om.MGlobal_displayError('QBJ_Tip : Please select relevant controller !!!')
+            else:
+                om.MGlobal_displayError('QBJ_Tip : Please select one controller !!!')
+
+
+    def update_fingerAnimNode(self,ListWidget_01):
+        # 获取当前选择的ListWidget item
+        currectSelectItem = ListWidget_01.currentItem().text()
+        poseGrp_Hide = 'Finger_L_poseGrp_Hide'
+        current_animNode = currectSelectItem+'_animUU'
+        direction = currectSelectItem.split('_')[-1]
+        valueList =  cmds.getAttr('{}.{}'.format(poseGrp_Hide,currectSelectItem))
+        valueIndex = self.angleReadableDict[direction]
+        cmds.keyframe(current_animNode, index=(0,0),floatChange= valueList[0][valueIndex],option='over', absolute=True)
