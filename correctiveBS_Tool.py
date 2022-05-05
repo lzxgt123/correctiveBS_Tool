@@ -327,3 +327,40 @@ class CorrectiveBsTool(object):
         valueList =  cmds.getAttr('{}.{}'.format(poseGrp_Hide,currectSelectItem))
         valueIndex = self.angleReadableDict[direction]
         cmds.keyframe(current_animNode, index=(0,0),floatChange= valueList[0][valueIndex],option='over', absolute=True)
+
+
+    def set_ref(self,baseGeo):
+        if baseGeo:
+            cmds.setAttr('{}Shape.overrideDisplayType'.format(baseGeo),2)
+
+
+    def set_GeoVisAnimation(self,baseGeo,sculptGeo):
+        baseGeo_AnimNode = cmds.createNode('animCurveTU',name = '{}_vis_animNode'.format(baseGeo),
+                                           skipSelect=True)
+        cmds.connectAttr('{}.output'.format(baseGeo_AnimNode),'{}.v'.format(baseGeo))
+        cmds.setKeyframe(baseGeo_AnimNode,t=20,v=1,inTangentType='Spline',outTangentType='Stepped')
+        cmds.setKeyframe(baseGeo_AnimNode, t=21, v=0, inTangentType='Spline', outTangentType='Stepped')
+
+        sculptGeo_AnimNode = cmds.createNode('animCurveTU', name='{}_vis_animNode'.format(sculptGeo),
+                                           skipSelect=True)
+        cmds.connectAttr('{}.output'.format(sculptGeo_AnimNode), '{}.v'.format(sculptGeo))
+        cmds.setKeyframe(sculptGeo_AnimNode, t=20, v=0, inTangentType='Spline', outTangentType='Stepped')
+        cmds.setKeyframe(sculptGeo_AnimNode, t=21, v=1, inTangentType='Spline', outTangentType='Stepped')
+
+
+    def del_GeoVisAnimation(self,baseGeo,sculptGeo):
+        baseGeo_AnimNode = '{}_vis_animNode'.format(baseGeo)
+        sculptGeo_AnimNode = '{}_vis_animNode'.format(sculptGeo)
+        # 如果存在以下两个动画节点,就删除
+        if baseGeo_AnimNode:
+            cmds.delete(baseGeo_AnimNode)
+
+        if sculptGeo_AnimNode:
+            cmds.delete(sculptGeo_AnimNode)
+        # 将baseGeo设置为显示
+        cmds.setAttr('{}.v'.format(baseGeo),1)
+
+
+    def create_tempSculptGrp(self):
+
+        pass

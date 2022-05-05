@@ -541,14 +541,32 @@ class CorrectiveBsUI(QtWidgets.QDialog):
             om.MGlobal_displayInfo('QBJ_Tip : Delete blendShape Node successfully !')
 
 
-    def click_sculpt_Btn(self):
-        print 'sculpt'
-        pass
+    def click_sculpt_Btn(self,ListWidget_01):
+        baseGeo = self.baseGeo_LineEdit.text()
+        currectSelectItem = ListWidget_01.currentItem().text()
+        sculptGeo = '{}_{}_sculpt'.format(baseGeo,currectSelectItem)
+        # 获取baseGeo，并将其设置为参考模式
+        tool.set_ref(baseGeo)
+
+        # 设置baseGeo，targetGeo显示动画
+        tool.set_GeoVisAnimation(baseGeo,sculptGeo)
+
+        # 设置控制器驱动动画
+        self.click_setAnimation(ListWidget_01)
+
+        # 删除控制器驱动动画
+        self.click_delAnimation(ListWidget_01)
 
 
-    def click_exit_Btn(self):
-        print 'exit'
-        pass
+
+    def click_exit_Btn(self,ListWidget_01):
+        baseGeo = self.baseGeo_LineEdit.text()
+        currectSelectItem = ListWidget_01.currentItem().text()
+        sculpttGeo = '{}_{}_sculpt'.format(baseGeo, currectSelectItem)
+
+        tool.del_GeoVisAnimation(baseGeo,sculpttGeo)
+
+
 
 
     def create_blendShape(self):
