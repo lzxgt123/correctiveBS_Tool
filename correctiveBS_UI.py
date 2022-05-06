@@ -10,6 +10,9 @@ launch :
 '''
 
 from itertools import chain
+
+from typing import Union
+
 import pymel.core as pm
 import maya.OpenMaya as om
 import maya.cmds as cmds
@@ -22,10 +25,6 @@ tool = CBT.CorrectiveBsTool()
 import system.advSystem as ADV
 reload(ADV)
 adv = ADV.advSystem()
-# import system.humanikSystem as HUMANIK
-# reload(HUMANIK)
-# humanik = HUMANIK.humanIKSystem()
-
 
 
 def maya_main_window():
@@ -103,7 +102,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
                 om.MGlobal_displayInfo('QBJ_Tip : Switch to FK mode successfully !')
             except:
                 om.MGlobal_displayWarning('QBJ_Tip : The ADV IKFK switch controller are not found ,failed to switch FK model !!')
-                pass
+
         elif model == 'HumanIk':
             pass
 
@@ -167,179 +166,110 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.adv_radioBtn.setChecked(True)
         self.humanIK_radioBtn = QtWidgets.QRadioButton('HumanIK')
         self.humanIK_radioBtn.setEnabled(False)
-        # self.defined_radionBtn = QtWidgets.QRadioButton('Defined')
-        # self.defined_radionBtn.setEnabled(False)
 
         self.radionBtn_Grp = QtWidgets.QButtonGroup()
         self.radionBtn_Grp.addButton(self.adv_radioBtn,1)
         self.radionBtn_Grp.addButton(self.humanIK_radioBtn, 2)
-        # self.radionBtn_Grp.addButton(self.defined_radionBtn,3)
+
 
         # 创建tabWidget内 组件
-        self.tabWidget = QtWidgets.QTabWidget()
-        self.tabWidget.setStyleSheet("QTabBar::tab{width:70} QTabBar::tab{height:20}")
-        self.tabWidget.setCurrentIndex(1)
-
-        self.arm_Tab = QtWidgets.QWidget(self.tabWidget)
-        self.arm_Layout = QtWidgets.QVBoxLayout(self.arm_Tab)
-        self.arm_Layout.setSizeConstraint(QtWidgets.QLayout.SetDefaultConstraint)
-        self.arm_Layout.setContentsMargins(2, 2, 2, 2)
-        self.arm_Layout.setSpacing(3)
-        # self.arm_CreateBtn = QtWidgets.QPushButton('Create')
-        self.arm_Splitter_01 = QtWidgets.QSplitter(self.arm_Tab)
-        self.arm_Splitter_01.setMinimumSize(QtCore.QSize(400, 0))
-        self.arm_Splitter_01.setOrientation(QtCore.Qt.Vertical)
-        # self.arm_Splitter_02 = QtWidgets.QSplitter(self.arm_Splitter_01)
-        # self.arm_Splitter_02.setOrientation(QtCore.Qt.Horizontal)
-        self.arm_ListWidget_01 = QtWidgets.QListWidget(self.arm_Splitter_01)
-        # 将 pose添加进listWidget中
-        for item in self.armPoseList:
-            self.arm_ListWidget_01.addItem(item)
-
-        # 将没有对应poseGrp的item设置为不可选状态
-        self.check_ifnot_PoseGrp(self.arm_ListWidget_01)
-
-        # 添加leg_ListWidget_01右击menu显示
+        # 添加 arm_ListWidget_01右击menu显示
+        self.arm_ListWidget_01 = QtWidgets.QListWidget()
+        self.arm_ListWidget_02 = QtWidgets.QListWidget()
         self.arm_ListWidget_01.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.arm_contextMenu = QtWidgets.QMenu(self.arm_ListWidget_01)
         self.arm_setAni = self.arm_contextMenu.addAction('set Animation')
         self.arm_delAni = self.arm_contextMenu.addAction('del Animation')
         self.arm_updatePose = self.arm_contextMenu.addAction('update Pose')
-
-        self.arm_ListWidget_02 = QtWidgets.QListWidget(self.arm_Splitter_01)
-        # self.arm_ListWidget_03 = QtWidgets.QListWidget(self.arm_Splitter_01)
-        self.arm_Splitter_01.setStretchFactor(0, 7)
-        self.arm_Splitter_01.setStretchFactor(1, 3)
-        # self.arm_Layout.addWidget(self.arm_CreateBtn)
-        self.arm_Layout.addWidget(self.arm_Splitter_01)
-        self.tabWidget.addTab(self.arm_Tab,'Arm')
-
-        self.leg_Tab = QtWidgets.QWidget(self.tabWidget)
-        self.leg_Layout = QtWidgets.QVBoxLayout(self.leg_Tab)
-        self.leg_Layout.setSizeConstraint(QtWidgets.QLayout.SetDefaultConstraint)
-        self.leg_Layout.setContentsMargins(2, 2, 2, 2)
-        self.leg_Layout.setSpacing(3)
-        # self.leg_CreateBtn = QtWidgets.QPushButton('Create')
-        self.leg_Splitter_01 = QtWidgets.QSplitter(self.leg_Tab)
-        self.leg_Splitter_01.setMinimumSize(QtCore.QSize(400, 0))
-        self.leg_Splitter_01.setOrientation(QtCore.Qt.Vertical)
-        # self.leg_Splitter_02 = QtWidgets.QSplitter(self.leg_Splitter_01)
-        # self.leg_Splitter_02.setOrientation(QtCore.Qt.Horizontal)
-        self.leg_ListWidget_01 = QtWidgets.QListWidget(self.leg_Splitter_01)
         # 将 pose添加进listWidget中
-        for item in self.legPoseList:
-            self.leg_ListWidget_01.addItem(item)
-
+        for item in self.armPoseList:
+            self.arm_ListWidget_01.addItem(item)
         # 将没有对应poseGrp的item设置为不可选状态
-        self.check_ifnot_PoseGrp(self.leg_ListWidget_01)
+        self.check_ifnot_PoseGrp(self.arm_ListWidget_01)
+        # 创建 arm_sculpt布局
+        self.arm_mirror_CB = QtWidgets.QCheckBox('Mirror')
+        self.arm_mirror_CB.setChecked(True)
+        self.arm_sculpt_Btn = QtWidgets.QPushButton('Sculpt')
+        self.arm_exit_Btn = QtWidgets.QPushButton('Exit')
+
 
         # 添加leg_ListWidget_01右击menu显示
+        self.leg_ListWidget_01 = QtWidgets.QListWidget()
+        self.leg_ListWidget_02 = QtWidgets.QListWidget()
         self.leg_ListWidget_01.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.leg_contextMenu = QtWidgets.QMenu(self.leg_ListWidget_01)
         self.leg_setAni = self.leg_contextMenu.addAction('set Animation')
         self.leg_delAni = self.leg_contextMenu.addAction('del Animation')
         self.leg_updatePose = self.leg_contextMenu.addAction('update Pose')
-
-        self.leg_ListWidget_02 = QtWidgets.QListWidget(self.leg_Splitter_01)
-        # self.leg_ListWidget_03 = QtWidgets.QListWidget(self.leg_Splitter_01)
-        self.leg_Splitter_01.setStretchFactor(0, 7)
-        self.leg_Splitter_01.setStretchFactor(1, 3)
-        # self.leg_Layout.addWidget(self.leg_CreateBtn)
-        self.leg_Layout.addWidget(self.leg_Splitter_01)
-        self.tabWidget.addTab(self.leg_Tab, 'leg')
-
-        self.finger_Tab = QtWidgets.QWidget(self.tabWidget)
-        self.finger_Layout = QtWidgets.QVBoxLayout(self.finger_Tab)
-        self.finger_Layout.setSizeConstraint(QtWidgets.QLayout.SetDefaultConstraint)
-        self.finger_Layout.setContentsMargins(2, 2, 2, 2)
-        self.finger_Layout.setSpacing(3)
-        # self.finger_CreateBtn = QtWidgets.QPushButton('Create')
-        self.finger_Splitter_01 = QtWidgets.QSplitter(self.finger_Tab)
-        self.finger_Splitter_01.setMinimumSize(QtCore.QSize(400, 0))
-        self.finger_Splitter_01.setOrientation(QtCore.Qt.Vertical)
-        # self.finger_Splitter_02 = QtWidgets.QSplitter(self.finger_Splitter_01)
-        # self.finger_Splitter_02.setOrientation(QtCore.Qt.Horizontal)
-        self.finger_ListWidget_01 = QtWidgets.QListWidget(self.finger_Splitter_01)
         # 将 pose添加进listWidget中
-        for item in self.fingerPoseList:
-            self.finger_ListWidget_01.addItem(item)
+        for item in self.legPoseList:
+            self.leg_ListWidget_01.addItem(item)
+        # 将没有对应poseGrp的item设置为不可选状态
+        self.check_ifnot_PoseGrp(self.leg_ListWidget_01)
+        # 创建leg_sculpt布局
+        self.leg_mirror_CB = QtWidgets.QCheckBox('Mirror')
+        self.leg_mirror_CB.setChecked(True)
+        self.leg_sculpt_Btn = QtWidgets.QPushButton('Sculpt')
+        self.leg_exit_Btn = QtWidgets.QPushButton('Exit')
+
 
         # 添加finger_ListWidget_01右击menu显示
+        self.finger_ListWidget_01 = QtWidgets.QListWidget()
+        self.finger_ListWidget_02 = QtWidgets.QListWidget()
         self.finger_ListWidget_01.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.finger_contextMenu = QtWidgets.QMenu(self.finger_ListWidget_01)
         self.finger_setAni = self.finger_contextMenu.addAction('set Animation')
         self.finger_delAni = self.finger_contextMenu.addAction('del Animation')
         self.finger_updatePose = self.finger_contextMenu.addAction('update Pose')
-
-        self.finger_ListWidget_02 = QtWidgets.QListWidget(self.finger_Splitter_01)
-        # self.finger_ListWidget_03 = QtWidgets.QListWidget(self.finger_Splitter_01)
-        self.finger_Splitter_01.setStretchFactor(0, 7)
-        self.finger_Splitter_01.setStretchFactor(1, 3)
-        # self.finger_Layout.addWidget(self.finger_CreateBtn)
-        self.finger_Layout.addWidget(self.finger_Splitter_01)
-        self.tabWidget.addTab(self.finger_Tab, 'finger')
-
-
-        self.torso_Tab = QtWidgets.QWidget(self.tabWidget)
-        self.torso_Layout = QtWidgets.QVBoxLayout(self.torso_Tab)
-        self.torso_Layout.setSizeConstraint(QtWidgets.QLayout.SetDefaultConstraint)
-        self.torso_Layout.setContentsMargins(2, 2, 2, 2)
-        self.torso_Layout.setSpacing(3)
-        # self.torso_CreateBtn = QtWidgets.QPushButton('Create')
-        self.torso_Splitter_01 = QtWidgets.QSplitter(self.torso_Tab)
-        self.torso_Splitter_01.setMinimumSize(QtCore.QSize(400, 0))
-        self.torso_Splitter_01.setOrientation(QtCore.Qt.Vertical)
-        # self.torso_Splitter_02 = QtWidgets.QSplitter(self.torso_Splitter_01)
-        # self.torso_Splitter_02.setOrientation(QtCore.Qt.Horizontal)
-        self.torso_ListWidget_01 = QtWidgets.QListWidget(self.torso_Splitter_01)
         # 将 pose添加进listWidget中
-        for item in self.torsoPoseList:
-            self.torso_ListWidget_01.addItem(item)
+        for item in self.fingerPoseList:
+            self.finger_ListWidget_01.addItem(item)
+        # 创建finger_sculpt布局
+        self.finger_mirror_CB = QtWidgets.QCheckBox('Mirror')
+        self.finger_mirror_CB.setChecked(True)
+        self.finger_sculpt_Btn = QtWidgets.QPushButton('Sculpt')
+        self.finger_exit_Btn = QtWidgets.QPushButton('Exit')
 
-        # 将没有对应poseGrp的item设置为不可选状态
-        self.check_ifnot_PoseGrp(self.torso_ListWidget_01)
 
         # 添加torso_ListWidget_01右击menu显示
+        self.torso_ListWidget_01 = QtWidgets.QListWidget()
+        self.torso_ListWidget_02 = QtWidgets.QListWidget()
         self.torso_ListWidget_01.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.torso_contextMenu = QtWidgets.QMenu(self.torso_ListWidget_01)
         self.torso_setAni = self.torso_contextMenu.addAction('set Animation')
         self.torso_delAni = self.torso_contextMenu.addAction('del Animation')
         self.torso_updatePose = self.torso_contextMenu.addAction('update Pose')
+        # 将 pose添加进listWidget中
+        for item in self.torsoPoseList:
+            self.torso_ListWidget_01.addItem(item)
+        # 将没有对应poseGrp的item设置为不可选状态
+        self.check_ifnot_PoseGrp(self.torso_ListWidget_01)
+        # 创建torso_sculpt布局
+        self.torso_mirror_CB = QtWidgets.QCheckBox('Mirror')
+        self.torso_mirror_CB.setChecked(True)
+        self.torso_sculpt_Btn = QtWidgets.QPushButton('Sculpt')
+        self.torso_exit_Btn = QtWidgets.QPushButton('Exit')
 
-        self.torso_ListWidget_02 = QtWidgets.QListWidget(self.torso_Splitter_01)
-        # self.torso_ListWidget_03 = QtWidgets.QListWidget(self.torso_Splitter_01)
-        self.torso_Splitter_01.setStretchFactor(0, 7)
-        self.torso_Splitter_01.setStretchFactor(1, 3)
-        # self.torso_Layout.addWidget(self.torso_CreateBtn)
-        self.torso_Layout.addWidget(self.torso_Splitter_01)
-        self.tabWidget.addTab(self.torso_Tab, 'torso')
 
-        self.custom_Tab = QtWidgets.QWidget(self.tabWidget)
+        self.custom_Tab = QtWidgets.QWidget()
         self.custom_Layout = QtWidgets.QVBoxLayout(self.custom_Tab)
         self.custom_Layout.setSizeConstraint(QtWidgets.QLayout.SetDefaultConstraint)
         self.custom_Layout.setContentsMargins(2, 2, 2, 2)
         self.custom_Layout.setSpacing(3)
-        # self.custom_CreateBtn = QtWidgets.QPushButton('Create')
         self.custom_Splitter_01 = QtWidgets.QSplitter(self.custom_Tab)
         self.custom_Splitter_01.setMinimumSize(QtCore.QSize(400, 0))
         self.custom_Splitter_01.setOrientation(QtCore.Qt.Vertical)
-        # self.custom_Splitter_02 = QtWidgets.QSplitter(self.custom_Splitter_01)
-        # self.custom_Splitter_02.setOrientation(QtCore.Qt.Horizontal)
         self.custom_ListWidget_01 = QtWidgets.QListWidget(self.custom_Splitter_01)
         self.custom_ListWidget_02 = QtWidgets.QListWidget(self.custom_Splitter_01)
-        # self.custom_ListWidget_03 = QtWidgets.QListWidget(self.custom_Splitter_01)
         self.custom_Splitter_01.setStretchFactor(0, 7)
         self.custom_Splitter_01.setStretchFactor(1, 3)
-        # self.custom_Layout.addWidget(self.custom_CreateBtn)
         self.custom_Layout.addWidget(self.custom_Splitter_01)
-        self.tabWidget.addTab(self.custom_Tab, 'custom')
+
 
         # 创建驱动控制 组件
         self.driver_Label = QtWidgets.QLabel('Driver :')
         self.driver_LineEdit = QtWidgets.QLineEdit()
-
         self.driver_LineEdit.setReadOnly(True)
-        # self.driverReload_Btn  =  QtWidgets.QPushButton('Reload')
 
         # 创建控制器旋转数值显示 组件
         self.rotate_Label = QtWidgets.QLabel('Rotate:')
@@ -352,15 +282,6 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.rotate_LineEdit_03 = QtWidgets.QLineEdit()
         self.rotate_LineEdit_03.setText('0.0')
         self.rotate_LineEdit_03.setReadOnly(True)
-
-        # 创建镜像选项按钮 组件
-        self.mirror_CB = QtWidgets.QCheckBox('Mirror')
-        self.mirror_CB.setChecked(True)
-
-        # 创建修型按钮 组件
-        self.sculpt_Btn = QtWidgets.QPushButton('Sculpt')
-        # self.mirror_Btn = QtWidgets.QPushButton('Mirror')
-        self.exit_Btn = QtWidgets.QPushButton('Exit')
 
         # 创建分割线 组件
         self.separator_02 = QtWidgets.QFrame()
@@ -396,26 +317,105 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.type_layout.addWidget(self.controlsType_Label)
         self.type_layout.addWidget(self.adv_radioBtn)
         self.type_layout.addWidget(self.humanIK_radioBtn)
-        # self.type_layout.addWidget(self.defined_radionBtn)
-
-        # 创建mirror布局
-        self.mirror_Layout = QtWidgets.QHBoxLayout()
-        self.mirror_Layout.addWidget(self.mirror_CB)
-
-        # 创建sculpt布局
-        self.sculpt_Layout = QtWidgets.QHBoxLayout()
-        self.sculpt_Layout.setContentsMargins(4,2,4,2)
-
-        self.sculpt_Layout.addWidget(self.sculpt_Btn)
-        # self.sculpt_Layout.addWidget(self.mirror_Btn)
-        self.sculpt_Layout.addWidget(self.exit_Btn)
 
         # 创建驱动控制 布局
         self.driver_layout = QtWidgets.QHBoxLayout()
         self.driver_layout.setContentsMargins(4,0,4,0)
         self.driver_layout.addWidget(self.driver_Label)
         self.driver_layout.addWidget(self.driver_LineEdit)
-        # self.driver_layout.addWidget(self.driverReload_Btn)
+
+        # 创建 tabWidget 布局
+        self.tabWidget = QtWidgets.QTabWidget()
+        self.tabWidget.setStyleSheet("QTabBar::tab{width:70} QTabBar::tab{height:20}")
+        self.tabWidget.setCurrentIndex(1)
+        # 创建 arm_Tab 布局
+        self.arm_Tab = QtWidgets.QWidget()
+        self.arm_Splitter_01 = QtWidgets.QSplitter()
+        self.arm_Splitter_01.setMinimumSize(QtCore.QSize(400, 0))
+        self.arm_Splitter_01.setOrientation(QtCore.Qt.Vertical)
+        self.arm_Splitter_01.addWidget(self.arm_ListWidget_01)
+        self.arm_Splitter_01.addWidget(self.arm_ListWidget_02)
+        self.arm_Splitter_01.setStretchFactor(0, 8)
+        self.arm_Splitter_01.setStretchFactor(1, 2)
+        self.arm_sculpt_Layout = QtWidgets.QHBoxLayout()
+        self.arm_sculpt_Layout.setContentsMargins(4, 2, 4, 2)
+        self.arm_sculpt_Layout.addWidget(self.arm_mirror_CB)
+        self.arm_sculpt_Layout.addWidget(self.arm_sculpt_Btn)
+        self.arm_sculpt_Layout.addWidget(self.arm_exit_Btn)
+        self.arm_Layout = QtWidgets.QVBoxLayout(self.arm_Tab)
+        self.arm_Layout.setSizeConstraint(QtWidgets.QLayout.SetDefaultConstraint)
+        self.arm_Layout.setContentsMargins(2, 2, 2, 2)
+        self.arm_Layout.setSpacing(3)
+        self.arm_Layout.addWidget(self.arm_Splitter_01)
+        self.arm_Layout.addLayout(self.arm_sculpt_Layout)
+        # 创建 leg_Tab 布局
+        self.leg_Tab = QtWidgets.QWidget()
+        self.leg_Splitter_01 = QtWidgets.QSplitter(self.leg_Tab)
+        self.leg_Splitter_01.setMinimumSize(QtCore.QSize(400, 0))
+        self.leg_Splitter_01.setOrientation(QtCore.Qt.Vertical)
+        self.leg_Splitter_01.addWidget(self.leg_ListWidget_01)
+        self.leg_Splitter_01.addWidget(self.leg_ListWidget_02)
+        self.leg_Splitter_01.setStretchFactor(0, 8)
+        self.leg_Splitter_01.setStretchFactor(1, 2)
+        self.leg_sculpt_Layout = QtWidgets.QHBoxLayout()
+        self.leg_sculpt_Layout.setContentsMargins(4, 2, 4, 2)
+        self.leg_sculpt_Layout.addWidget(self.leg_mirror_CB)
+        self.leg_sculpt_Layout.addWidget(self.leg_sculpt_Btn)
+        self.leg_sculpt_Layout.addWidget(self.leg_exit_Btn)
+        self.leg_Layout = QtWidgets.QVBoxLayout(self.leg_Tab)
+        self.leg_Layout.setSizeConstraint(QtWidgets.QLayout.SetDefaultConstraint)
+        self.leg_Layout.setContentsMargins(2, 2, 2, 2)
+        self.leg_Layout.setSpacing(3)
+        self.leg_Layout.addWidget(self.leg_Splitter_01)
+        self.leg_Layout.addLayout(self.leg_sculpt_Layout)
+        # 创建 finger_Tab 布局
+        self.finger_Tab = QtWidgets.QWidget()
+        self.finger_Splitter_01 = QtWidgets.QSplitter()
+        self.finger_Splitter_01.setMinimumSize(QtCore.QSize(400, 0))
+        self.finger_Splitter_01.setOrientation(QtCore.Qt.Vertical)
+        self.finger_Splitter_01.addWidget(self.finger_ListWidget_01)
+        self.finger_Splitter_01.addWidget(self.finger_ListWidget_02)
+        self.finger_Splitter_01.setStretchFactor(0, 8)
+        self.finger_Splitter_01.setStretchFactor(1, 2)
+        self.finger_sculpt_Layout = QtWidgets.QHBoxLayout()
+        self.finger_sculpt_Layout.setContentsMargins(4, 2, 4, 2)
+        self.finger_sculpt_Layout.addWidget(self.finger_mirror_CB)
+        self.finger_sculpt_Layout.addWidget(self.finger_sculpt_Btn)
+        self.finger_sculpt_Layout.addWidget(self.finger_exit_Btn)
+        self.finger_Layout = QtWidgets.QVBoxLayout(self.finger_Tab)
+        self.finger_Layout.setSizeConstraint(QtWidgets.QLayout.SetDefaultConstraint)
+        self.finger_Layout.setContentsMargins(2, 2, 2, 2)
+        self.finger_Layout.setSpacing(3)
+        self.finger_Layout.addWidget(self.finger_Splitter_01)
+        self.finger_Layout.addLayout(self.finger_sculpt_Layout)
+        # 创建 torso_Tab 布局
+        self.torso_Tab = QtWidgets.QWidget()
+        self.torso_Splitter_01 = QtWidgets.QSplitter()
+        self.torso_Splitter_01.setMinimumSize(QtCore.QSize(400, 0))
+        self.torso_Splitter_01.setOrientation(QtCore.Qt.Vertical)
+        self.torso_Splitter_01.addWidget(self.torso_ListWidget_01)
+        self.torso_Splitter_01.addWidget(self.torso_ListWidget_02)
+        self.torso_Splitter_01.setStretchFactor(0, 8)
+        self.torso_Splitter_01.setStretchFactor(1, 2)
+        self.torso_sculpt_Layout = QtWidgets.QHBoxLayout()
+        self.torso_sculpt_Layout.setContentsMargins(4, 2, 4, 2)
+        self.torso_sculpt_Layout.addWidget(self.torso_mirror_CB)
+        self.torso_sculpt_Layout.addWidget(self.torso_sculpt_Btn)
+        self.torso_sculpt_Layout.addWidget(self.torso_exit_Btn)
+        self.torso_Layout = QtWidgets.QVBoxLayout(self.torso_Tab)
+        self.torso_Layout.setSizeConstraint(QtWidgets.QLayout.SetDefaultConstraint)
+        self.torso_Layout.setContentsMargins(2, 2, 2, 2)
+        self.torso_Layout.setSpacing(3)
+        self.torso_Layout.addWidget(self.torso_Splitter_01)
+        self.torso_Layout.addLayout(self.torso_sculpt_Layout)
+
+
+        self.tabWidget.addTab(self.arm_Tab, 'Arm')
+        self.tabWidget.addTab(self.leg_Tab, 'leg')
+        self.tabWidget.addTab(self.finger_Tab, 'finger')
+        self.tabWidget.addTab(self.torso_Tab, 'torso')
+        self.tabWidget.addTab(self.custom_Tab, 'custom')
+
 
         # 创建控制器旋转数值显示 布局
         self.rotate_layout = QtWidgets.QHBoxLayout()
@@ -433,8 +433,6 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         main_Layout.addLayout(self.driver_layout)
         main_Layout.addWidget(self.tabWidget)
         main_Layout.addLayout(self.rotate_layout)
-        main_Layout.addLayout(self.mirror_Layout)
-        main_Layout.addLayout(self.sculpt_Layout)
         main_Layout.addWidget(self.separator_02)
         main_Layout.addWidget(self.copyRight_label)
 
@@ -445,9 +443,9 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.targetGeo_Btn.clicked.connect(self.click_targetGeoLoad_Btn)
         # self.add_Btn.clicked.connect(self.click_addBS_Btn)
         self.del_Btn.clicked.connect(self.click_delBs_Btn)
-        self.sculpt_Btn.clicked.connect(self.click_sculpt_Btn)
+        self.arm_sculpt_Btn.clicked.connect(self.click_sculpt_Btn)
         # self.mirror_Btn.clicked.connect(self.click_mirror_Btn)
-        self.exit_Btn.clicked.connect(self.click_exit_Btn)
+        self.arm_exit_Btn.clicked.connect(self.click_exit_Btn)
 
         # self.arm_CreateBtn.clicked.connect(self.click_armCreate_Btn)
         self.arm_ListWidget_01.itemClicked.connect(self.click_armListWidget01_item)
@@ -487,6 +485,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
             # 生成左右Finger_poseGrp
             tool.create_finger_PoseGrp('Finger_L',tool.L_fingerPoseDict)
             tool.create_finger_PoseGrp('Finger_R',tool.R_fingerPoseDict)
+
 
 
     def rightMenuShow(self,contextMenu):
@@ -545,28 +544,33 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         baseGeo = self.baseGeo_LineEdit.text()
         currectSelectItem = ListWidget_01.currentItem().text()
         sculptGeo = '{}_{}_sculpt'.format(baseGeo,currectSelectItem)
+
         # 获取baseGeo，并将其设置为参考模式
-        tool.set_ref(baseGeo)
-
-        # 设置baseGeo，targetGeo显示动画
+        tool.set_refVis(baseGeo)
+        # 将sculpt_Btn及其余的item设置为不可选状态
+        self.lock_allItem(ListWidget_01)
+        # 设置baseGe,sculptGeo显示动画
         tool.set_GeoVisAnimation(baseGeo,sculptGeo)
-
         # 设置控制器驱动动画
         self.click_setAnimation(ListWidget_01)
 
-        # 删除控制器驱动动画
-        self.click_delAnimation(ListWidget_01)
-
+        # 创建tempSculptGrp
+        tool.create_tempSculptGrp(baseGeo,currectSelectItem)
 
 
     def click_exit_Btn(self,ListWidget_01):
         baseGeo = self.baseGeo_LineEdit.text()
         currectSelectItem = ListWidget_01.currentItem().text()
-        sculpttGeo = '{}_{}_sculpt'.format(baseGeo, currectSelectItem)
+        sculptGeo = '{}_{}_sculpt'.format(baseGeo, currectSelectItem)
 
-        tool.del_GeoVisAnimation(baseGeo,sculpttGeo)
-
-
+        # 删除控制器驱动动画
+        self.click_delAnimation(ListWidget_01)
+        # 删除baseGe,sculptGeo显示动画
+        tool.del_GeoVisAnimation(baseGeo, sculptGeo)
+        # 将sculpt_Btn及其余的item设置为可选状态
+        self.unlock_allItem(ListWidget_01)
+        # 获取baseGeo，并将其设置为正常模式
+        tool.set_normalVis(baseGeo)
 
 
     def create_blendShape(self):
@@ -739,18 +743,20 @@ class CorrectiveBsUI(QtWidgets.QDialog):
 
     def click_setAnimation(self,ListWidget_01):
         currectSelectItem = ListWidget_01.currentItem().text()
+        self.set_RotateLineEdit_Value(ListWidget_01)
         rotateValueDict = self.returnRotateValue()
-        # 将时间滑块的范围调整成1-25帧
-        try:
-            cmds.playbackOptions(edit=True,min=1,max=25,ast=1,aet=25)
-        except:
-            pass
-        # 设置对应的fkCtrl的动画
         if not currectSelectItem.startswith('-'):
+            # 将时间滑块的范围调整成1-25帧
+            try:
+                cmds.playbackOptions(edit=True,min=1,max=25,ast=1,aet=25)
+            except:
+                pass
+            # 设置对应的fkCtrl的动画
             fkCtrl = 'FK' + currectSelectItem.split('_')[0]+'_'+currectSelectItem.split('_')[1]
             if cmds.objExists(fkCtrl):
                 for axis ,value in rotateValueDict.items():
-                    animNode =cmds.createNode('animCurveTA',name = '{}_{}'.format(fkCtrl,axis))
+                    self.del_animNode(fkCtrl,axis)
+                    animNode =cmds.createNode('animCurveTA',name = '{}_{}_animTA'.format(fkCtrl,axis))
                     cmds.connectAttr('{}.output'.format(animNode),'{}.{}'.format(fkCtrl,axis))
                     cmds.setKeyframe(animNode,time=1,value = 0)
                     cmds.setKeyframe(animNode, time=20, value=float(value))
@@ -770,11 +776,20 @@ class CorrectiveBsUI(QtWidgets.QDialog):
                     cmds.setAttr('{}.{}'.format(fkCtrl,axis),0)
 
 
+    def del_animNode(self,fkCtrl,axis):
+        animNode = cmds.listConnections('{}.{}'.format(fkCtrl,axis),type='animCurveTA')
+        if animNode:
+            cmds.delete(animNode)
+
+
     def click_updatePose(self, ListWidget_01):
-        tool.update_poseHide_Info(ListWidget_01)
-        tool.update_PoseLocPosition(ListWidget_01)
-        tool.update_animNode(ListWidget_01)
-        om.MGlobal_displayInfo('QBJ_Tip : Update pose successfully !')
+        currectSelectItem = ListWidget_01.currentItem().text()
+        if not currectSelectItem.startswith('-'):
+
+            tool.update_poseHide_Info(ListWidget_01)
+            tool.update_PoseLocPosition(ListWidget_01)
+            tool.update_animNode(ListWidget_01)
+            om.MGlobal_displayInfo('QBJ_Tip : Update pose successfully !')
 
 
     def  click_updateFingerPose(self):
@@ -802,10 +817,30 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         hideGrp = 'Finger_L_poseGrp_Hide'
         if cmds.objExists(hideGrp):
             if not currectSelectItem.startswith('-'):
-
                 valueList = cmds.getAttr('{}.{}'.format(hideGrp,currectSelectItem))
                 self.rotate_LineEdit_01.setText(str(valueList[0][0]))
                 self.rotate_LineEdit_02.setText(str(valueList[0][1]))
                 self.rotate_LineEdit_03.setText(str(valueList[0][2]))
+
+
+    def lock_allItem(self,ListWidget_01):
+        # 将sculpt_Btn设置为不可选
+        self.arm_sculpt_Btn.setEnabled(False)
+        currectSelectItem = ListWidget_01.currentItem().text()
+        # 将除了选择的当前item以外的,都设置为不可选状态
+        for i in range(ListWidget_01.count()):
+            pose = ListWidget_01.item(i)
+            currentPose= ListWidget_01.currentItem()
+            pose.setFlags(pose.flags() & ~QtCore.Qt.ItemIsEnabled)
+            currentPose.setFlags(Union[pose.flags(), QtCore.Qt.ItemIsEnabled])
+
+
+    def unlock_allItem(self,ListWidget_01):
+        # 将sculpt_Btn设置为可选
+        self.arm_sculpt_Btn.setEnabled(True)
+        # 将除了选择的当前item以外的,都设置为可选状态
+        for i in range(ListWidget_01.count()):
+            pose = ListWidget_01.item(i)
+            pose.setFlags(Union[pose.flags(), QtCore.Qt.ItemIsEnabled])
 
 

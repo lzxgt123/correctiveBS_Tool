@@ -8,6 +8,7 @@ launch :
         import correctiveBS_Tool as QBJ_correctiveBS_Tool
         reload(QBJ_correctiveBS_Tool)
 '''
+import cvshapeinverter
 import collections
 import maya.cmds as cmds
 import maya.OpenMaya as om
@@ -329,9 +330,13 @@ class CorrectiveBsTool(object):
         cmds.keyframe(current_animNode, index=(0,0),floatChange= valueList[0][valueIndex],option='over', absolute=True)
 
 
-    def set_ref(self,baseGeo):
-        if baseGeo:
-            cmds.setAttr('{}Shape.overrideDisplayType'.format(baseGeo),2)
+    def set_refVis(self,geo):
+        if geo:
+            cmds.setAttr('{}Shape.overrideDisplayType'.format(geo),2)
+
+    def set_normalVis(self,geo):
+        if geo:
+            cmds.setAttr('{}Shape.overrideDisplayType'.format(geo),0)
 
 
     def set_GeoVisAnimation(self,baseGeo,sculptGeo):
@@ -361,6 +366,20 @@ class CorrectiveBsTool(object):
         cmds.setAttr('{}.v'.format(baseGeo),1)
 
 
-    def create_tempSculptGrp(self):
+    def create_tempSculptGrp(self,baseGeo,currectSelectItem):
+        tempSculptGrp = '{}_tempSculptGrp'.format(currectSelectItem)
+        if not cmds.objExists(tempSculptGrp):
+            # 创建tempSculptGrp
+            tempSculptGrp = cmds.group(name='{}_tempSculptGrp'.format(currectSelectItem),world=True,empty=True)
 
-        pass
+        # 复制baseGeo，得到sculptGeo,并将显示模式设置为正常
+        sculptGeo = cmds.duplicate(baseGeo,name = '{}_{}_sculpt'.format(baseGeo,currectSelectItem))
+        self.set_normalVis(sculptGeo)
+
+        # 创建inverted_Geo
+        inverted_Geo = cvshapeinverter.invert(baseGeo, sculptGeo)
+        cmds.rename(inverted_Geo,'{}_inverted'.format(sculptGeo))
+
+
+
+        
