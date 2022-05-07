@@ -142,9 +142,9 @@ class CorrectiveBsTool(object):
 
     def add_blendShape(self,baseGeo):
         # 检查场景中是否存在targetGeoGrp，如果没有就创建
-        targetGeoGrp = '{}_bsTarget_Grp'.format(baseGeo)
-        if not cmds.objExists(targetGeoGrp):
-            targetGeoGrp = cmds.group(name='{}_bsTarget_Grp'.format(baseGeo), empty=True, world=True)
+        bsTargetGrp = '{}_bsTarget_Grp'.format(baseGeo)
+        if not cmds.objExists(bsTargetGrp):
+            bsTargetGrp = cmds.group(name='{}_bsTarget_Grp'.format(baseGeo), empty=True, world=True)
 
         # 给baseGeo添加blendShape
         if  baseGeo:
@@ -157,7 +157,7 @@ class CorrectiveBsTool(object):
                     return default_targetGeoName,blendShapeNode
             else:
                 targetGeo = cmds.duplicate(baseGeo,name = '{}_target'.format(baseGeo))
-                cmds.parent(targetGeo, targetGeoGrp)
+                cmds.parent(targetGeo, bsTargetGrp)
                 cmds.setAttr('{}.v'.format(targetGeo[0]),0)
                 cmds.select(cl=True)
                 if not self.get_blendshape(baseGeo):
@@ -366,8 +366,10 @@ class CorrectiveBsTool(object):
         cmds.setAttr('{}.v'.format(baseGeo),1)
 
 
-    def create_tempSculptGrp(self,baseGeo,currectSelectItem):
+    def create_tempSculptGrp(self,baseGeo,currectSelectItem,currectSelectItem_02):
         tempSculptGrp = '{}_tempSculptGrp'.format(currectSelectItem)
+        bsGeo = currectSelectItem_02.currentItem().text()
+
         if not cmds.objExists(tempSculptGrp):
             # 创建tempSculptGrp
             tempSculptGrp = cmds.group(name='{}_tempSculptGrp'.format(currectSelectItem),world=True,empty=True)
@@ -380,6 +382,11 @@ class CorrectiveBsTool(object):
         inverted_Geo = cvshapeinverter.invert(baseGeo, sculptGeo)
         cmds.rename(inverted_Geo,'{}_inverted'.format(sculptGeo))
 
+        bsNode = cmds.blendShape(bsGeo,)
 
 
+    def del_tempSculptGrp(self,currectSelectItem):
+        tempSculptGrp = '{}_tempSculptGrp'.format(currectSelectItem)
+        if tempSculptGrp:
+            cmds.delete(tempSculptGrp)
         

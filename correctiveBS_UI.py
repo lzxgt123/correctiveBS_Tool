@@ -93,7 +93,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
 
 
     def setFkModel(self):
-
+        # 将 所有控制器设置为fk模式
         model = self.radionBtn_Grp.checkedButton().text()
         if model == 'ADV':
             try:
@@ -115,6 +115,25 @@ class CorrectiveBsUI(QtWidgets.QDialog):
                 poseGrp = pose.text().split('_')[0] + '_' + pose.text().split('_')[1] + '_' + 'poseGrp'
                 if poseGrp not in poseGrpList:
                     pose.setFlags(pose.flags() & ~QtCore.Qt.ItemIsEnabled)
+
+
+    def add_bsTargetInfo(self,baseGeo):
+        '''
+        在bsTargetGrp组上添加每一个pose，用来记录pose对应生成的bsTarget信息
+        :param baseGeo: 修型目标
+        :return: None
+        '''
+        allPoseList = self.armPoseList + self.legPoseList + self.fingerPoseList + self.torsoPoseList
+        bsTargetGrp = '{}_bsTarget_Grp'.format(baseGeo)
+        bsTargetGrp_attrs= []
+        if cmds.listAttr(bsTargetGrp,userDefined=True):
+            bsTargetGrp_attrs = [attr for attr in cmds.listAttr(bsTargetGrp,userDefined=True)]
+
+        if bsTargetGrp:
+            for pose in allPoseList:
+                if not pose.startswith('-'):
+                    if pose not in bsTargetGrp_attrs:
+                        cmds.addAttr(bsTargetGrp,longName='%s'%pose,dataType='string',keyable=False)
 
 
     def showUI(self):
@@ -150,7 +169,6 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         # 创建加载blendShape 组件
         self.blendshape_Label = QtWidgets.QLabel('blendShape :')
         self.blendshape_comboBox = QtWidgets.QComboBox()
-        # self.add_Btn = QtWidgets.QPushButton('Add')
         self.del_Btn = QtWidgets.QPushButton('Del')
 
         # 创建分割线 组件
@@ -160,8 +178,6 @@ class CorrectiveBsUI(QtWidgets.QDialog):
 
         # 创建 控制器类型 组件
         self.controlsType_Label = QtWidgets.QLabel('Rig System :')
-        # self.spacerItem_01 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding,
-        #                                            QtWidgets.QSizePolicy.Minimum)
         self.adv_radioBtn = QtWidgets.QRadioButton('ADV')
         self.adv_radioBtn.setChecked(True)
         self.humanIK_radioBtn = QtWidgets.QRadioButton('HumanIK')
@@ -171,6 +187,14 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.radionBtn_Grp.addButton(self.adv_radioBtn,1)
         self.radionBtn_Grp.addButton(self.humanIK_radioBtn, 2)
 
+
+        # 创建驱动控制 组件
+        self.driver_Label = QtWidgets.QLabel('Driver :')
+        self.driver_LineEdit = QtWidgets.QLineEdit()
+        self.driver_LineEdit.setReadOnly(True)
+        self.driver_value_LineEdit = QtWidgets.QLineEdit()
+        self.driver_value_LineEdit.setMaximumWidth(80)
+        self.driver_value_LineEdit.setEnabled(False)
 
         # 创建tabWidget内 组件
         # 添加 arm_ListWidget_01右击menu显示
@@ -266,11 +290,6 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.custom_Layout.addWidget(self.custom_Splitter_01)
 
 
-        # 创建驱动控制 组件
-        self.driver_Label = QtWidgets.QLabel('Driver :')
-        self.driver_LineEdit = QtWidgets.QLineEdit()
-        self.driver_LineEdit.setReadOnly(True)
-
         # 创建控制器旋转数值显示 组件
         self.rotate_Label = QtWidgets.QLabel('Rotate:')
         self.rotate_LineEdit_01 = QtWidgets.QLineEdit()
@@ -323,6 +342,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.driver_layout.setContentsMargins(4,0,4,0)
         self.driver_layout.addWidget(self.driver_Label)
         self.driver_layout.addWidget(self.driver_LineEdit)
+        self.driver_layout.addWidget(self.driver_value_LineEdit)
 
         # 创建 tabWidget 布局
         self.tabWidget = QtWidgets.QTabWidget()
@@ -441,11 +461,16 @@ class CorrectiveBsUI(QtWidgets.QDialog):
 
         self.baseGeo_Btn.clicked.connect(self.click_BaseGeoLoad_Btn)
         self.targetGeo_Btn.clicked.connect(self.click_targetGeoLoad_Btn)
-        # self.add_Btn.clicked.connect(self.click_addBS_Btn)
         self.del_Btn.clicked.connect(self.click_delBs_Btn)
-        self.arm_sculpt_Btn.clicked.connect(self.click_sculpt_Btn)
-        # self.mirror_Btn.clicked.connect(self.click_mirror_Btn)
-        self.arm_exit_Btn.clicked.connect(self.click_exit_Btn)
+        self.arm_sculpt_Btn.clicked.connect(lambda :self.click_sculpt_Btn(self.arm_ListWidget_01,self.arm_ListWidget_02))
+        self.arm_exit_Btn.clicked.connect(lambda :self.click_exit_Btn(self.arm_ListWidget_01))
+        self.leg_sculpt_Btn.clicked.connect(lambda :self.click_sculpt_Btn(self.leg_ListWidget_01,self.leg_ListWidget_02))
+        self.leg_exit_Btn.clicked.connect(lambda :self.click_exit_Btn(self.leg_ListWidget_01))
+        self.finger_sculpt_Btn.clicked.connect(lambda :self.click_sculpt_Btn(self.finger_ListWidget_01,self.finger_ListWidget_02))
+        self.finger_exit_Btn.clicked.connect(lambda :self.click_exit_Btn(self.finger_ListWidget_01))
+        self.torso_sculpt_Btn.clicked.connect(lambda :self.click_sculpt_Btn(self.torso_ListWidget_01,self.torso_ListWidget_02))
+        self.torso_exit_Btn.clicked.connect(lambda :self.click_exit_Btn(self.torso_ListWidget_01,))
+
 
         # self.arm_CreateBtn.clicked.connect(self.click_armCreate_Btn)
         self.arm_ListWidget_01.itemClicked.connect(self.click_armListWidget01_item)
@@ -477,15 +502,12 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.torso_delAni.triggered.connect(lambda: self.click_delAnimation(self.torso_ListWidget_01))
         self.torso_updatePose.triggered.connect(lambda : self.click_updatePose(self.torso_ListWidget_01))
 
-        # self.custom_CreateBtn.clicked.connect(self.click_customCreate_Btn)
-
 
     def tabWidget_changeEvent(self,index):
         if index == 2:
             # 生成左右Finger_poseGrp
             tool.create_finger_PoseGrp('Finger_L',tool.L_fingerPoseDict)
             tool.create_finger_PoseGrp('Finger_R',tool.R_fingerPoseDict)
-
 
 
     def rightMenuShow(self,contextMenu):
@@ -529,33 +551,41 @@ class CorrectiveBsUI(QtWidgets.QDialog):
 
 
     def click_delBs_Btn(self):
+
         bsNode = self.blendshape_comboBox.currentText()
         targetGeo = self.targetGeo_LineEdit.text()
+        baseGeo = self.baseGeo_LineEdit.text()
+        bsTargetGrp = '{}_bsTarget_Grp'.format(baseGeo)
         if bsNode:
             tool.del_blendShape(bsNode)
             self.blendshape_comboBox.clear()
         if targetGeo:
             tool.del_targetGeo(targetGeo)
             self.targetGeo_LineEdit.clear()
-            om.MGlobal_displayInfo('QBJ_Tip : Delete blendShape Node successfully !')
+        if bsTargetGrp:
+            cmds.delete(bsTargetGrp)
+
+        om.MGlobal_displayInfo('QBJ_Tip : Delete blendShape Node successfully !')
 
 
-    def click_sculpt_Btn(self,ListWidget_01):
+    def click_sculpt_Btn(self,ListWidget_01,ListWidget_02):
         baseGeo = self.baseGeo_LineEdit.text()
         currectSelectItem = ListWidget_01.currentItem().text()
         sculptGeo = '{}_{}_sculpt'.format(baseGeo,currectSelectItem)
+        if  ListWidget_02.currentItem() != None:
+            currectSelectItem_02 = ListWidget_02.currentItem().text()
 
-        # 获取baseGeo，并将其设置为参考模式
-        tool.set_refVis(baseGeo)
-        # 将sculpt_Btn及其余的item设置为不可选状态
-        self.lock_allItem(ListWidget_01)
-        # 设置baseGe,sculptGeo显示动画
-        tool.set_GeoVisAnimation(baseGeo,sculptGeo)
-        # 设置控制器驱动动画
-        self.click_setAnimation(ListWidget_01)
+            # 获取baseGeo，并将其设置为参考模式
+            tool.set_refVis(baseGeo)
+            # 将sculpt_Btn及其余的item设置为不可选状态
+            self.lock_allItem(ListWidget_01)
+            # 设置baseGe,sculptGeo显示动画
+            tool.set_GeoVisAnimation(baseGeo,sculptGeo)
+            # 设置控制器驱动动画
+            self.click_setAnimation(ListWidget_01)
 
-        # 创建tempSculptGrp
-        tool.create_tempSculptGrp(baseGeo,currectSelectItem)
+            # 创建 tempSculptGrp
+            tool.create_tempSculptGrp(baseGeo,currectSelectItem,currectSelectItem_02)
 
 
     def click_exit_Btn(self,ListWidget_01):
@@ -571,13 +601,18 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.unlock_allItem(ListWidget_01)
         # 获取baseGeo，并将其设置为正常模式
         tool.set_normalVis(baseGeo)
+        # 删除 tempSculptGrp
+        tool.del_tempSculptGrp(currectSelectItem)
 
 
     def create_blendShape(self):
+
         # 为 baseGeo 创建blendShape，并将生成的target和bsNode加载到Gui中
         baseGeo = self.baseGeo_LineEdit.text()
         if baseGeo:
             targetGeo_bsNode_list = tool.add_blendShape(baseGeo)
+            # 在targetGeoGrp组上添加bsTargetInfo
+            self.add_bsTargetInfo(baseGeo)
             self.targetGeo_LineEdit.setText(str(targetGeo_bsNode_list[0]))
             self.blendshape_comboBox.clear()
             self.blendshape_comboBox.addItem(str(targetGeo_bsNode_list[1][0]))
@@ -617,6 +652,8 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.setCtrlRotation(ListWidget_01)
         # 获取Driver信息
         self.loadDriverInfo(ListWidget_01)
+        # 获取 bsTargetInfo
+        self.loadBsTargetInfo(baseGeo,ListWidget_01,ListWidget_02)
 
 
     def click_armListWidget01_item(self):
@@ -660,9 +697,25 @@ class CorrectiveBsUI(QtWidgets.QDialog):
             # 将poseGrp上的数据显示在driver_LineEdit中
             if cmds.objExists(poseGrp):
                 value = cmds.getAttr('{}.{}'.format(poseGrp, currectSelectItem))
-                self.driver_LineEdit.setText('{}.{}    {}'.format(poseGrp, currectSelectItem, round(value, 4)))
+                self.driver_LineEdit.setText('{}.{}'.format(poseGrp, currectSelectItem))
+                self.driver_value_LineEdit.setText('{}'.format(round(value, 4)))
             else:
                 self.driver_LineEdit.setText('')
+                self.driver_value_LineEdit.setText('')
+
+
+    def loadBsTargetInfo(self,baseGeo,ListWidget_01,ListWidget_02):
+        ListWidget_02.clear()
+        if baseGeo:
+            bsTargetGrp = '{}_bsTarget_Grp'.format(baseGeo)
+            currectSelectItem = ListWidget_01.currentItem().text()
+            if bsTargetGrp:
+                if not currectSelectItem.startswith('-'):
+                    bsTargetInfo = cmds.getAttr('{}.{}'.format(bsTargetGrp,currectSelectItem))
+                    if bsTargetInfo:
+                        bsTargetList = bsTargetInfo.split(';')
+                        for t in bsTargetList:
+                            ListWidget_02.addItem(t)
 
 
     def loadTarget(self,baseGeo,blendShapeNode,ListWidget_01,ListWidget_02):
@@ -792,7 +845,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
             om.MGlobal_displayInfo('QBJ_Tip : Update pose successfully !')
 
 
-    def  click_updateFingerPose(self):
+    def click_updateFingerPose(self):
         tool.update_fingerPoseHide_Info(self.finger_ListWidget_01)
         tool.update_fingerAnimNode(self.finger_ListWidget_01)
         om.MGlobal_displayInfo('QBJ_Tip : Update pose successfully !')
