@@ -11,6 +11,7 @@ launch :
 import cvshapeinverter
 import collections
 import maya.cmds as cmds
+import  pymel.core as pm
 import maya.OpenMaya as om
 import system.advSystem as adv
 reload(adv)
@@ -88,12 +89,14 @@ class CorrectiveBsTool(object):
         :param object: 需要被判断的对象
         :return: 是否为mesh对象
         '''
-        cmds.select(object,r=True)
-        cmds.pickWalk(direction='down')
-        child = cmds.ls(sl=1)
-        cmds.select(cl=True)
-        if cmds.nodeType(child) == 'mesh':
-            return True
+        obj = pm.PyNode(object[0])
+        objShape = obj.getShape()
+        if objShape:
+            objShapeType = objShape.nodeType()
+            if objShapeType == 'mesh':
+                return True
+            else:
+                return None
         else:
             return None
 
@@ -112,7 +115,7 @@ class CorrectiveBsTool(object):
             om.MGlobal_displayWarning('QBJ_Tip : Please select only one object !! ')
 
 
-    def return_defaultTargetGeo(self,baseGeo):
+    def return_defaultTargetGeo(self, baseGeo):
         if baseGeo:
             targetGeo = baseGeo + '_target'
             if cmds.ls(targetGeo):
@@ -139,18 +142,36 @@ class CorrectiveBsTool(object):
             else:
                 return None
 
+    # def add_bsTargetInfo(self,baseGeo,allPoseList):
+    #     '''
+    #     在bsTargetGrp组上添加每一个pose，用来记录pose对应生成的bsTarget信息
+    #     :param baseGeo: 修型目标
+    #     :return: None
+    #     '''
+    #     bsTargetGrp = '{}_bsTarget_Grp'.format(baseGeo)
+    #     bsTargetGrp_attrs= []
+    #     if cmds.listAttr(bsTargetGrp,userDefined=True):
+    #         bsTargetGrp_attrs = [attr for attr in cmds.listAttr(bsTargetGrp,userDefined=True)]
+    #
+    #     if bsTargetGrp:
+    #         for pose in allPoseList:
+    #             if not pose.startswith('-'):
+    #                 if pose not in bsTargetGrp_attrs:
+    #                     cmds.addAttr(bsTargetGrp,longName='%s'%pose,dataType='string',keyable=False)
+    #                     cmds.setAttr('{}.{}'.format(bsTargetGrp, pose), '{};'.format(pose), type='string')
 
-    def add_blendShape(self,baseGeo):
+
+    def add_blendShape(self,baseGeo,targetGeo_LineEdit,targetGeo):
         # 检查场景中是否存在targetGeoGrp，如果没有就创建
         bsTargetGrp = '{}_bsTarget_Grp'.format(baseGeo)
         if not cmds.objExists(bsTargetGrp):
             bsTargetGrp = cmds.group(name='{}_bsTarget_Grp'.format(baseGeo), empty=True, world=True)
+            # self.add_bsTargetInfo(baseGeo,allPoseList)
 
         # 给baseGeo添加blendShape
         if  baseGeo:
             default_targetGeoName = baseGeo + '_target'
-            if self.return_defaultTargetGeo(baseGeo):
-                targetGeo = self.return_defaultTargetGeo(baseGeo)
+            if targetGeo:
                 if not self.get_blendshape(baseGeo):
                     blendShapeNode = cmds.blendShape(baseGeo,
                                                      name='{}_bs'.format(baseGeo),frontOfChain=True,tc=True)
@@ -354,6 +375,12 @@ class CorrectiveBsTool(object):
 
 
     def del_GeoVisAnimation(self,baseGeo,sculptGeo):
+        '''
+        删除baseGeo和sculptGeo上的显示动画
+        :param baseGeo:
+        :param sculptGeo:
+        :return:
+        '''
         baseGeo_AnimNode = '{}_vis_animNode'.format(baseGeo)
         sculptGeo_AnimNode = '{}_vis_animNode'.format(sculptGeo)
         # 如果存在以下两个动画节点,就删除
@@ -366,9 +393,23 @@ class CorrectiveBsTool(object):
         cmds.setAttr('{}.v'.format(baseGeo),1)
 
 
-    def create_tempSculptGrp(self,baseGeo,currectSelectItem,currectSelectItem_02):
+    def create_tempSculptGrp(self,baseGeo,currectSelectItem,currectSelectItem_02,targetOri_Geo):
         tempSculptGrp = '{}_tempSculptGrp'.format(currectSelectItem)
-        bsGeo = currectSelectItem_02.currentItem().text()
+
+        # 如果在场景中没有找到baseGeo，就终止并报错
+        if not cmds.objExists(baseGeo):
+            om.MGlobal_displayError('QBJ_Tip : can not find {}'.format(baseGeo))
+            return
+        # 如果在场景中没有找到targetOri_Geo，就终止并报错
+        if not cmds.objExists(targetOri_Geo):
+            om.MGlobal_displayError('QBJ_Tip : can not find {}'.format(targetOri_Geo))
+            return 
+        
+        if currectSelectItem_02 == None:
+            BsGeo = '{}_{}'.format(baseGeo,currectSelectItem)
+            if not cmds.objExists(BsGeo):
+                    BsGeo = cmds.duplicate()
+                
 
         if not cmds.objExists(tempSculptGrp):
             # 创建tempSculptGrp
@@ -381,12 +422,52 @@ class CorrectiveBsTool(object):
         # 创建inverted_Geo
         inverted_Geo = cvshapeinverter.invert(baseGeo, sculptGeo)
         cmds.rename(inverted_Geo,'{}_inverted'.format(sculptGeo))
+        inverted_neg_Geo = cmds.duplicate(inverted_Geo,name = '{}_neg'.format(inverted_Geo))
 
-        bsNode = cmds.blendShape(bsGeo,)
+        # 将sculptGeo，inverted_Geo，inverted_neg_Geo放在tempSculptGrp组内
+        cmds.parent(sculptGeo,inverted_Geo,inverted_neg_Geo,tempSculptGrp)
+
+
+
+    def return_bsTarget(self,currectSelectItem,currectSelectItem_02):
+        # 如果没有选择ListWidget_02中的item，弹出窗口让用户自定义创建bsTarget
+        if not currectSelectItem_02:
+            pass
+        else:
+            bsGeo = currectSelectItem_02.currentItem().text()
+
+
+    # def bsTarget_input_dialog(self):
+    #     WINDOW_NAME = 'AddTargetWin'
+    #     if cmds.window(WINDOW_NAME, exists=True):
+    #         cmds.deleteUI(WINDOW_NAME)
+    #
+    #     main_Win = cmds.window(WINDOW_NAME,title='Add target')
+    #     main_layout =cmds.columnLayout(adjustableColumn=True)
+    #
+    #
+    #     cmds.showWindow(main_Win)
+
+    def check_exists_bsTargetInfo(self,baseGeo,ListWidget_01):
+        if baseGeo:
+         bsTargetGrp = '{}_bsTarget_Grp'.format(baseGeo)
+         currectSelectItem = ListWidget_01.currentItem().text()
+         if bsTargetGrp:
+             if not currectSelectItem.startswith('-'):
+                bsTargetInfo = cmds.getAttr('{}.{}'.format(bsTargetGrp, currectSelectItem))
+                if bsTargetInfo:
+                    bsTargetList = bsTargetInfo.split(';')
+                    return bsTargetList
+                else:
+                    return None
+
+
+
 
 
     def del_tempSculptGrp(self,currectSelectItem):
         tempSculptGrp = '{}_tempSculptGrp'.format(currectSelectItem)
         if tempSculptGrp:
             cmds.delete(tempSculptGrp)
-        
+
+

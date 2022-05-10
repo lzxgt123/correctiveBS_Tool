@@ -83,6 +83,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
                      'Spine2_M_Front', 'Spine2_M_Back', 'Spine2_M_Left', 'Spine2_M_Right'
                     ]
 
+    allPoseList = list(chain(armPoseList, legPoseList, fingerPoseList, torsoPoseList))
 
     def __init__(self,parent=maya_main_window()):
         super(CorrectiveBsUI, self).__init__(parent)
@@ -116,24 +117,6 @@ class CorrectiveBsUI(QtWidgets.QDialog):
                 if poseGrp not in poseGrpList:
                     pose.setFlags(pose.flags() & ~QtCore.Qt.ItemIsEnabled)
 
-
-    def add_bsTargetInfo(self,baseGeo):
-        '''
-        在bsTargetGrp组上添加每一个pose，用来记录pose对应生成的bsTarget信息
-        :param baseGeo: 修型目标
-        :return: None
-        '''
-        allPoseList = self.armPoseList + self.legPoseList + self.fingerPoseList + self.torsoPoseList
-        bsTargetGrp = '{}_bsTarget_Grp'.format(baseGeo)
-        bsTargetGrp_attrs= []
-        if cmds.listAttr(bsTargetGrp,userDefined=True):
-            bsTargetGrp_attrs = [attr for attr in cmds.listAttr(bsTargetGrp,userDefined=True)]
-
-        if bsTargetGrp:
-            for pose in allPoseList:
-                if not pose.startswith('-'):
-                    if pose not in bsTargetGrp_attrs:
-                        cmds.addAttr(bsTargetGrp,longName='%s'%pose,dataType='string',keyable=False)
 
 
     def showUI(self):
@@ -194,7 +177,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.driver_LineEdit.setReadOnly(True)
         self.driver_value_LineEdit = QtWidgets.QLineEdit()
         self.driver_value_LineEdit.setMaximumWidth(80)
-        self.driver_value_LineEdit.setEnabled(False)
+        self.driver_value_LineEdit.setReadOnly(True)
 
         # 创建tabWidget内 组件
         # 添加 arm_ListWidget_01右击menu显示
@@ -205,6 +188,8 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.arm_setAni = self.arm_contextMenu.addAction('set Animation')
         self.arm_delAni = self.arm_contextMenu.addAction('del Animation')
         self.arm_updatePose = self.arm_contextMenu.addAction('update Pose')
+        self.arm_addInbetween = self.arm_contextMenu.addAction('add In-between')
+        self.arm_removeInbetween = self.arm_contextMenu.addAction('remove In-between')
         # 将 pose添加进listWidget中
         for item in self.armPoseList:
             self.arm_ListWidget_01.addItem(item)
@@ -225,6 +210,9 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.leg_setAni = self.leg_contextMenu.addAction('set Animation')
         self.leg_delAni = self.leg_contextMenu.addAction('del Animation')
         self.leg_updatePose = self.leg_contextMenu.addAction('update Pose')
+        self.leg_addInbetween = self.leg_contextMenu.addAction('add In-between')
+        self.leg_removeInbetween = self.leg_contextMenu.addAction('remove In-between')
+
         # 将 pose添加进listWidget中
         for item in self.legPoseList:
             self.leg_ListWidget_01.addItem(item)
@@ -245,6 +233,9 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.finger_setAni = self.finger_contextMenu.addAction('set Animation')
         self.finger_delAni = self.finger_contextMenu.addAction('del Animation')
         self.finger_updatePose = self.finger_contextMenu.addAction('update Pose')
+        self.finger_addInbetween = self.finger_contextMenu.addAction('add In-between')
+        self.finger_removeInbetween = self.finger_contextMenu.addAction('remove In-between')
+
         # 将 pose添加进listWidget中
         for item in self.fingerPoseList:
             self.finger_ListWidget_01.addItem(item)
@@ -263,6 +254,8 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.torso_setAni = self.torso_contextMenu.addAction('set Animation')
         self.torso_delAni = self.torso_contextMenu.addAction('del Animation')
         self.torso_updatePose = self.torso_contextMenu.addAction('update Pose')
+        self.torso_addInbetween = self.torso_contextMenu.addAction('add In-between')
+        self.torso_removeInbetween = self.torso_contextMenu.addAction('remove In-between')
         # 将 pose添加进listWidget中
         for item in self.torsoPoseList:
             self.torso_ListWidget_01.addItem(item)
@@ -478,6 +471,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.arm_setAni.triggered.connect(lambda : self.click_setAnimation(self.arm_ListWidget_01))
         self.arm_delAni.triggered.connect(lambda : self.click_delAnimation(self.arm_ListWidget_01))
         self.arm_updatePose.triggered.connect(lambda : self.click_updatePose(self.arm_ListWidget_01))
+        self.arm_addInbetween.triggered.connect(lambda : self.click_addInbetween(self.arm_ListWidget_01))
 
         # self.leg_CreateBtn.clicked.connect(self.click_legCreate_Btn)
         self.leg_ListWidget_01.itemClicked.connect(self.click_legListWidget01_item)
@@ -485,6 +479,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.leg_setAni.triggered.connect(lambda: self.click_setAnimation(self.leg_ListWidget_01))
         self.leg_delAni.triggered.connect(lambda: self.click_delAnimation(self.leg_ListWidget_01))
         self.leg_updatePose.triggered.connect(lambda:self.click_updatePose(self.leg_ListWidget_01))
+        self.leg_addInbetween.triggered.connect(lambda : self.click_addInbetween(self.leg_ListWidget_01))
 
         self.tabWidget.currentChanged.connect(self.tabWidget_changeEvent)
 
@@ -494,6 +489,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.finger_setAni.triggered.connect(lambda: self.click_setAnimation(self.finger_ListWidget_01))
         self.finger_delAni.triggered.connect(lambda: self.click_delAnimation(self.finger_ListWidget_01))
         self.finger_updatePose.triggered.connect(self.click_updateFingerPose)
+        self.finger_addInbetween.triggered.connect(self.click_fingerAddInbetween)
 
         # self.torso_CreateBtn.clicked.connect(self.click_torsoCreate_Btn)
         self.torso_ListWidget_01.clicked.connect(self.click_torsoListWidget01_item)
@@ -501,7 +497,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.torso_setAni.triggered.connect(lambda: self.click_setAnimation(self.torso_ListWidget_01))
         self.torso_delAni.triggered.connect(lambda: self.click_delAnimation(self.torso_ListWidget_01))
         self.torso_updatePose.triggered.connect(lambda : self.click_updatePose(self.torso_ListWidget_01))
-
+        self.torso_addInbetween.triggered.connect(lambda : self.click_addInbetween(self.torso_ListWidget_01))
 
     def tabWidget_changeEvent(self,index):
         if index == 2:
@@ -571,8 +567,9 @@ class CorrectiveBsUI(QtWidgets.QDialog):
     def click_sculpt_Btn(self,ListWidget_01,ListWidget_02):
         baseGeo = self.baseGeo_LineEdit.text()
         currectSelectItem = ListWidget_01.currentItem().text()
+        targetOri_Geo = self.return_defaultTargetGeo(self.targetGeo_LineEdit)
         sculptGeo = '{}_{}_sculpt'.format(baseGeo,currectSelectItem)
-        if  ListWidget_02.currentItem() != None:
+        if  not currectSelectItem.startswith('-'):
             currectSelectItem_02 = ListWidget_02.currentItem().text()
 
             # 获取baseGeo，并将其设置为参考模式
@@ -585,7 +582,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
             self.click_setAnimation(ListWidget_01)
 
             # 创建 tempSculptGrp
-            tool.create_tempSculptGrp(baseGeo,currectSelectItem,currectSelectItem_02)
+            tool.create_tempSculptGrp(baseGeo,currectSelectItem,currectSelectItem_02,targetOri_Geo)
 
 
     def click_exit_Btn(self,ListWidget_01):
@@ -609,10 +606,10 @@ class CorrectiveBsUI(QtWidgets.QDialog):
 
         # 为 baseGeo 创建blendShape，并将生成的target和bsNode加载到Gui中
         baseGeo = self.baseGeo_LineEdit.text()
+        targetGeo = self.targetGeo_LineEdit.text()
         if baseGeo:
-            targetGeo_bsNode_list = tool.add_blendShape(baseGeo)
+            targetGeo_bsNode_list = tool.add_blendShape(baseGeo,self.targetGeo_LineEdit,targetGeo)
             # 在targetGeoGrp组上添加bsTargetInfo
-            self.add_bsTargetInfo(baseGeo)
             self.targetGeo_LineEdit.setText(str(targetGeo_bsNode_list[0]))
             self.blendshape_comboBox.clear()
             self.blendshape_comboBox.addItem(str(targetGeo_bsNode_list[1][0]))
@@ -642,6 +639,8 @@ class CorrectiveBsUI(QtWidgets.QDialog):
 
     def click_ListWidget01_item(self,baseGeo,blendShapeNode,ListWidget_01,ListWidget_02):
 
+        currectSelectItem = ListWidget_01.currentItem().text()
+
         # 获取对应命名的target
         self.loadTarget(baseGeo, blendShapeNode, ListWidget_01, ListWidget_02)
         # 获取所选择的item对应的控制器的旋转数值
@@ -654,6 +653,10 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.loadDriverInfo(ListWidget_01)
         # 获取 bsTargetInfo
         self.loadBsTargetInfo(baseGeo,ListWidget_01,ListWidget_02)
+        # 选中对应的fkCtrl
+        if not currectSelectItem.startswith('-'):
+            fkCtrl = 'FK' + currectSelectItem.split('_')[0] + '_' + currectSelectItem.split('_')[1]
+            cmds.select(fkCtrl, r=True)
 
 
     def click_armListWidget01_item(self):
@@ -671,8 +674,9 @@ class CorrectiveBsUI(QtWidgets.QDialog):
     def click_fingerListWidget01_item(self):
         baseGeo = self.baseGeo_LineEdit.text()
         blendShapeNode = self.blendshape_comboBox.currentText()
+        currectSelectItem = self.finger_ListWidget_01.currentItem().text()
         # 获取对应命名的target
-        self.loadTarget(baseGeo, blendShapeNode,self.finger_ListWidget_01, self.finger_ListWidget_01)
+        self.loadTarget(baseGeo, blendShapeNode,self.finger_ListWidget_01, self.finger_ListWidget_02)
         # 获取所选择的item对应的控制器的旋转数值
         self.set_fingerRotateLineEdit_Value()
         # 清除所有控制器上的数值
@@ -681,6 +685,12 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.setCtrlRotation(self.finger_ListWidget_01)
         # 获取Driver信息
         self.loadFingerDriverInfo()
+        # 获取 bsTargetInfo
+        self.loadBsTargetInfo(baseGeo,self.finger_ListWidget_01, self.finger_ListWidget_02)
+        # 选中对应的fkCtrl
+        if not currectSelectItem.startswith('-'):
+            fkCtrl = 'FK' + currectSelectItem.split('_')[0] + '_' + currectSelectItem.split('_')[1]
+            cmds.select(fkCtrl, r=True)
 
 
     def click_torsoListWidget01_item(self):
@@ -706,16 +716,12 @@ class CorrectiveBsUI(QtWidgets.QDialog):
 
     def loadBsTargetInfo(self,baseGeo,ListWidget_01,ListWidget_02):
         ListWidget_02.clear()
-        if baseGeo:
-            bsTargetGrp = '{}_bsTarget_Grp'.format(baseGeo)
-            currectSelectItem = ListWidget_01.currentItem().text()
-            if bsTargetGrp:
-                if not currectSelectItem.startswith('-'):
-                    bsTargetInfo = cmds.getAttr('{}.{}'.format(bsTargetGrp,currectSelectItem))
-                    if bsTargetInfo:
-                        bsTargetList = bsTargetInfo.split(';')
-                        for t in bsTargetList:
-                            ListWidget_02.addItem(t)
+        # 获取当前所选pose，对应的bsTargetInfo
+        bsTargetList = tool.check_exists_bsTargetInfo(baseGeo,ListWidget_01)
+        if bsTargetList:
+            for t in bsTargetList:
+                if t != '':
+                    ListWidget_02.addItem(t)
 
 
     def loadTarget(self,baseGeo,blendShapeNode,ListWidget_01,ListWidget_02):
@@ -738,11 +744,8 @@ class CorrectiveBsUI(QtWidgets.QDialog):
 
 
     def clearCtrlRotation(self):
-        # 获取所有pose,添加进allPoseList组内
-        allPoseList = list(chain(self.armPoseList,self.legPoseList,self.fingerPoseList,self.torsoPoseList))
-        fkCtrlList = []
         # 将pose，命名转化为fkCtrl后，将rotate数值清零
-        for i in allPoseList:
+        for i in self.allPoseList:
             if not i.startswith('-'):
                 fkCtrl = 'FK' + i.split('_')[0] + '_' + i.split('_')[1]
                 try:
@@ -842,6 +845,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
             tool.update_poseHide_Info(ListWidget_01)
             tool.update_PoseLocPosition(ListWidget_01)
             tool.update_animNode(ListWidget_01)
+
             om.MGlobal_displayInfo('QBJ_Tip : Update pose successfully !')
 
 
@@ -849,6 +853,14 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         tool.update_fingerPoseHide_Info(self.finger_ListWidget_01)
         tool.update_fingerAnimNode(self.finger_ListWidget_01)
         om.MGlobal_displayInfo('QBJ_Tip : Update pose successfully !')
+
+
+    def click_addInbetween(self,ListWidget_01):
+        pass
+
+
+    def click_fingerAddInbetween(self):
+        pass
 
 
     def loadFingerDriverInfo(self):
