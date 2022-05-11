@@ -161,7 +161,7 @@ class CorrectiveBsTool(object):
                         # cmds.setAttr('{}.{}'.format(bsTargetGrp, pose), '{};'.format(pose), type='string')
 
 
-    def add_blendShape(self,baseGeo,targetGeo_LineEdit,targetGeo,allPoseList):
+    def add_blendShape(self,baseGeo,targetGeo,allPoseList):
         # 检查场景中是否存在targetGeoGrp，如果没有就创建
         bsTargetGrp = '{}_bsTarget_Grp'.format(baseGeo)
         if not cmds.objExists(bsTargetGrp):
@@ -384,13 +384,13 @@ class CorrectiveBsTool(object):
         cmds.setAttr('{}.v'.format(baseGeo),1)
 
 
-    def create_tempSculptGrp(self,baseGeo,pose,target,targetOri_Geo):
-
+    def create_tempSculptGrp(self,baseGeo,pose,targetOri_Geo):
         tempSculptGrp = '{}_tempSculptGrp'.format(pose)
-        target_Geo = '{}_{}'.format(baseGeo,target)
+        target_Geo = '{}_{}'.format(baseGeo,pose)
         bsTarget_Grp = '{}_bsTarget_Grp'.format(baseGeo)
+
         if not cmds.objExists(target_Geo):
-            target_Geo = cmds.duplicate(targetOri_Geo,name = '{}_{}'.format(baseGeo,target) )
+            target_Geo = cmds.duplicate(targetOri_Geo,name = '{}_{}'.format(baseGeo,pose) )
             cmds.parent(target_Geo,bsTarget_Grp)
 
         if not cmds.objExists(tempSculptGrp):
@@ -411,14 +411,6 @@ class CorrectiveBsTool(object):
 
 
 
-    def return_bsTarget(self,pose,target):
-        # 如果没有选择ListWidget_02中的item，弹出窗口让用户自定义创建bsTarget
-        if not target:
-            pass
-        else:
-            pass
-
-
     def check_exists_bsTargetInfo(self,baseGeo,pose):
         if baseGeo:
          bsTargetGrp = '{}_bsTarget_Grp'.format(baseGeo)
@@ -430,6 +422,16 @@ class CorrectiveBsTool(object):
                     return bsTargetList
                 else:
                     return None
+
+
+    def set_bsTargetInfo(self,baseGeo,pose,target):
+        bsTargetGrp = '{}_bsTarget_Grp'.format(baseGeo)
+        if cmds.objExists(bsTargetGrp):
+            attrStr = cmds.getAttr('{}.{}'.format(bsTargetGrp,pose))
+            attrList = [s for s in attrStr.split(';') if s != '']
+            if target not in attrList:
+                newAttrStr = ';'.join(attrList) + ';' + target + ';'
+                cmds.setAttr('{}.{}'.format(bsTargetGrp,pose),newAttrStr,type='string')
 
 
     def del_tempSculptGrp(self,pose):
@@ -445,7 +447,6 @@ class CorrectiveBsTool(object):
 
         main_Win = cmds.window(WINDOW_NAME,title='Add target')
         main_layout =cmds.columnLayout(adjustableColumn=True)
-
 
 
         cmds.showWindow(main_Win)
