@@ -118,7 +118,7 @@ class CorrectiveBsTool(object):
     def return_defaultTargetGeo(self, baseGeo):
         if baseGeo:
             targetGeo = baseGeo + '_target'
-            if cmds.ls(targetGeo):
+            if cmds.objExists(targetGeo):
                 return targetGeo
 
 
@@ -142,31 +142,31 @@ class CorrectiveBsTool(object):
             else:
                 return None
 
-    # def add_bsTargetInfo(self,baseGeo,allPoseList):
-    #     '''
-    #     在bsTargetGrp组上添加每一个pose，用来记录pose对应生成的bsTarget信息
-    #     :param baseGeo: 修型目标
-    #     :return: None
-    #     '''
-    #     bsTargetGrp = '{}_bsTarget_Grp'.format(baseGeo)
-    #     bsTargetGrp_attrs= []
-    #     if cmds.listAttr(bsTargetGrp,userDefined=True):
-    #         bsTargetGrp_attrs = [attr for attr in cmds.listAttr(bsTargetGrp,userDefined=True)]
-    #
-    #     if bsTargetGrp:
-    #         for pose in allPoseList:
-    #             if not pose.startswith('-'):
-    #                 if pose not in bsTargetGrp_attrs:
-    #                     cmds.addAttr(bsTargetGrp,longName='%s'%pose,dataType='string',keyable=False)
-    #                     cmds.setAttr('{}.{}'.format(bsTargetGrp, pose), '{};'.format(pose), type='string')
+    def add_bsTargetInfo(self,baseGeo,allPoseList):
+        '''
+        在bsTargetGrp组上添加每一个pose，用来记录pose对应生成的bsTarget信息
+        :param baseGeo: 修型目标
+        :return: None
+        '''
+        bsTargetGrp = '{}_bsTarget_Grp'.format(baseGeo)
+        bsTargetGrp_attrs= []
+        if cmds.listAttr(bsTargetGrp,userDefined=True):
+            bsTargetGrp_attrs = [attr for attr in cmds.listAttr(bsTargetGrp,userDefined=True)]
+
+        if bsTargetGrp:
+            for pose in allPoseList:
+                if not pose.startswith('-'):
+                    if pose not in bsTargetGrp_attrs:
+                        cmds.addAttr(bsTargetGrp,longName='%s'%pose,dataType='string',keyable=False)
+                        # cmds.setAttr('{}.{}'.format(bsTargetGrp, pose), '{};'.format(pose), type='string')
 
 
-    def add_blendShape(self,baseGeo,targetGeo_LineEdit,targetGeo):
+    def add_blendShape(self,baseGeo,targetGeo_LineEdit,targetGeo,allPoseList):
         # 检查场景中是否存在targetGeoGrp，如果没有就创建
         bsTargetGrp = '{}_bsTarget_Grp'.format(baseGeo)
         if not cmds.objExists(bsTargetGrp):
             bsTargetGrp = cmds.group(name='{}_bsTarget_Grp'.format(baseGeo), empty=True, world=True)
-            # self.add_bsTargetInfo(baseGeo,allPoseList)
+            self.add_bsTargetInfo(baseGeo,allPoseList)
 
         # 给baseGeo添加blendShape
         if  baseGeo:
@@ -264,14 +264,12 @@ class CorrectiveBsTool(object):
                 cmds.connectAttr('{}.ry'.format(fingerJoint),'{}.input'.format(node))
 
 
-    def update_PoseLocPosition(self,ListWidget_01):
-        # 获取当前选择的ListWidget item
-        currectSelectItem = ListWidget_01.currentItem().text()
+    def update_PoseLocPosition(self,pose):
 
-        if not currectSelectItem.startswith('-'):
+        if not pose.startswith('-'):
             # 根据命名获取到对应的poseLoc和poseReaderLoc,重新放置poseLoc位置
-            currectPoseLoc = currectSelectItem + '_loc'
-            currectPoseReaderLoc = currectSelectItem.split('_')[0] + '_' + currectSelectItem.split('_')[
+            currectPoseLoc = pose + '_loc'
+            currectPoseReaderLoc = pose.split('_')[0] + '_' + pose.split('_')[
                 1] + '_poseReader_loc'
             # 将PoseLoc定位到新的位置
 
@@ -285,17 +283,14 @@ class CorrectiveBsTool(object):
                 cmds.setAttr('{}.{}'.format(currectPoseLoc, axis), lock=True)
 
 
-    def update_poseHide_Info(self,ListWidget_01):
+    def update_poseHide_Info(self,pose):
         # 获取当前选择到的控制器
         selectCtrl = cmds.ls(sl=True, type='transform')
 
-        # 获取当前选择的ListWidget item
-        currectSelectItem = ListWidget_01.currentItem().text()
-
-        if not currectSelectItem.startswith('-'):
-            fkCtrl = 'FK' + currectSelectItem.split('_')[0]+'_'+currectSelectItem.split('_')[1]
-            poseGrp_Hide = currectSelectItem.split('_')[0]+'_'+currectSelectItem.split('_')[1] + '_poseGrp_Hide'
-            attr = currectSelectItem.split('_')[-1]
+        if not pose.startswith('-'):
+            fkCtrl = 'FK' + pose.split('_')[0]+'_'+pose.split('_')[1]
+            poseGrp_Hide = pose.split('_')[0]+'_'+pose.split('_')[1] + '_poseGrp_Hide'
+            attr = pose.split('_')[-1]
 
             # 如果所选的控制器是正确的控制器，则获取此时控制器上的rotate数值，并将数值重新设置给对应的属性
             if selectCtrl:
@@ -308,45 +303,41 @@ class CorrectiveBsTool(object):
                 om.MGlobal_displayError('QBJ_Tip : Please select one controller !!!')
 
 
-    def update_animNode(self,ListWidget_01):
-        # 获取当前选择的ListWidget item
-        currectSelectItem = ListWidget_01.currentItem().text()
-        poseGrp_Hide = currectSelectItem.split('_')[0] + '_' + currectSelectItem.split('_')[1] + '_poseGrp_Hide'
-        current_animNode = currectSelectItem+'_animUU'
-        direction = currectSelectItem.split('_')[-1]
+    def update_animNode(self,pose):
+
+        poseGrp_Hide = pose.split('_')[0] + '_' + pose.split('_')[1] + '_poseGrp_Hide'
+        current_animNode = pose+'_animUU'
+        direction = pose.split('_')[-1]
         valueList =  cmds.getAttr('{}.{}'.format(poseGrp_Hide,direction))
         valueIndex = self.angleReadableDict[direction]
         cmds.keyframe(current_animNode, index=(1,1),floatChange= valueList[0][valueIndex],option='over', absolute=True)
 
 
-    def update_fingerPoseHide_Info(self,ListWidget_01):
+    def update_fingerPoseHide_Info(self,pose):
         # 获取当前选择到的控制器
         selectCtrl = cmds.ls(sl=True, type='transform')
 
-        # 获取当前选择的ListWidget item
-        currectSelectItem = ListWidget_01.currentItem().text()
-        if not currectSelectItem.startswith('-'):
-            fkCtrl = 'FK' + currectSelectItem.split('_')[0] + '_' + currectSelectItem.split('_')[1]
+        if not pose.startswith('-'):
+            fkCtrl = 'FK' + pose.split('_')[0] + '_' + pose.split('_')[1]
             poseGrp_Hide = 'Finger_L_poseGrp_Hide'
 
             # 如果所选的控制器是正确的控制器，则获取此时控制器上的rotate数值，并将数值重新设置给对应的属性
             if selectCtrl:
                 if selectCtrl[0] == fkCtrl:
                     valueList = [cmds.getAttr('{}.{}'.format(selectCtrl[0], axis)) for axis in ['rx', 'ry', 'rz']]
-                    cmds.setAttr('{}.{}'.format(poseGrp_Hide, currectSelectItem), valueList[0], valueList[1], valueList[2])
+                    cmds.setAttr('{}.{}'.format(poseGrp_Hide, pose), valueList[0], valueList[1], valueList[2])
                 else:
                     om.MGlobal_displayError('QBJ_Tip : Please select relevant controller !!!')
             else:
                 om.MGlobal_displayError('QBJ_Tip : Please select one controller !!!')
 
 
-    def update_fingerAnimNode(self,ListWidget_01):
-        # 获取当前选择的ListWidget item
-        currectSelectItem = ListWidget_01.currentItem().text()
+    def update_fingerAnimNode(self,pose):
+
         poseGrp_Hide = 'Finger_L_poseGrp_Hide'
-        current_animNode = currectSelectItem+'_animUU'
-        direction = currectSelectItem.split('_')[-1]
-        valueList =  cmds.getAttr('{}.{}'.format(poseGrp_Hide,currectSelectItem))
+        current_animNode = pose+'_animUU'
+        direction = pose.split('_')[-1]
+        valueList =  cmds.getAttr('{}.{}'.format(poseGrp_Hide,pose))
         valueIndex = self.angleReadableDict[direction]
         cmds.keyframe(current_animNode, index=(0,0),floatChange= valueList[0][valueIndex],option='over', absolute=True)
 
@@ -393,30 +384,21 @@ class CorrectiveBsTool(object):
         cmds.setAttr('{}.v'.format(baseGeo),1)
 
 
-    def create_tempSculptGrp(self,baseGeo,currectSelectItem,currectSelectItem_02,targetOri_Geo):
-        tempSculptGrp = '{}_tempSculptGrp'.format(currectSelectItem)
+    def create_tempSculptGrp(self,baseGeo,pose,target,targetOri_Geo):
 
-        # 如果在场景中没有找到baseGeo，就终止并报错
-        if not cmds.objExists(baseGeo):
-            om.MGlobal_displayError('QBJ_Tip : can not find {}'.format(baseGeo))
-            return
-        # 如果在场景中没有找到targetOri_Geo，就终止并报错
-        if not cmds.objExists(targetOri_Geo):
-            om.MGlobal_displayError('QBJ_Tip : can not find {}'.format(targetOri_Geo))
-            return 
-        
-        if currectSelectItem_02 == None:
-            BsGeo = '{}_{}'.format(baseGeo,currectSelectItem)
-            if not cmds.objExists(BsGeo):
-                    BsGeo = cmds.duplicate()
-                
+        tempSculptGrp = '{}_tempSculptGrp'.format(pose)
+        target_Geo = '{}_{}'.format(baseGeo,target)
+        bsTarget_Grp = '{}_bsTarget_Grp'.format(baseGeo)
+        if not cmds.objExists(target_Geo):
+            target_Geo = cmds.duplicate(targetOri_Geo,name = '{}_{}'.format(baseGeo,target) )
+            cmds.parent(target_Geo,bsTarget_Grp)
 
         if not cmds.objExists(tempSculptGrp):
             # 创建tempSculptGrp
-            tempSculptGrp = cmds.group(name='{}_tempSculptGrp'.format(currectSelectItem),world=True,empty=True)
+            tempSculptGrp = cmds.group(name='{}_tempSculptGrp'.format(pose),world=True,empty=True)
 
         # 复制baseGeo，得到sculptGeo,并将显示模式设置为正常
-        sculptGeo = cmds.duplicate(baseGeo,name = '{}_{}_sculpt'.format(baseGeo,currectSelectItem))
+        sculptGeo = cmds.duplicate(baseGeo,name = '{}_{}_sculpt'.format(baseGeo,pose))
         self.set_normalVis(sculptGeo)
 
         # 创建inverted_Geo
@@ -429,32 +411,20 @@ class CorrectiveBsTool(object):
 
 
 
-    def return_bsTarget(self,currectSelectItem,currectSelectItem_02):
+    def return_bsTarget(self,pose,target):
         # 如果没有选择ListWidget_02中的item，弹出窗口让用户自定义创建bsTarget
-        if not currectSelectItem_02:
+        if not target:
             pass
         else:
-            bsGeo = currectSelectItem_02.currentItem().text()
+            pass
 
 
-    # def bsTarget_input_dialog(self):
-    #     WINDOW_NAME = 'AddTargetWin'
-    #     if cmds.window(WINDOW_NAME, exists=True):
-    #         cmds.deleteUI(WINDOW_NAME)
-    #
-    #     main_Win = cmds.window(WINDOW_NAME,title='Add target')
-    #     main_layout =cmds.columnLayout(adjustableColumn=True)
-    #
-    #
-    #     cmds.showWindow(main_Win)
-
-    def check_exists_bsTargetInfo(self,baseGeo,ListWidget_01):
+    def check_exists_bsTargetInfo(self,baseGeo,pose):
         if baseGeo:
          bsTargetGrp = '{}_bsTarget_Grp'.format(baseGeo)
-         currectSelectItem = ListWidget_01.currentItem().text()
          if bsTargetGrp:
-             if not currectSelectItem.startswith('-'):
-                bsTargetInfo = cmds.getAttr('{}.{}'.format(bsTargetGrp, currectSelectItem))
+             if not pose.startswith('-'):
+                bsTargetInfo = cmds.getAttr('{}.{}'.format(bsTargetGrp, pose))
                 if bsTargetInfo:
                     bsTargetList = bsTargetInfo.split(';')
                     return bsTargetList
@@ -462,12 +432,20 @@ class CorrectiveBsTool(object):
                     return None
 
 
-
-
-
-    def del_tempSculptGrp(self,currectSelectItem):
-        tempSculptGrp = '{}_tempSculptGrp'.format(currectSelectItem)
+    def del_tempSculptGrp(self,pose):
+        tempSculptGrp = '{}_tempSculptGrp'.format(pose)
         if tempSculptGrp:
             cmds.delete(tempSculptGrp)
 
 
+    def bsTarget_input_dialog(self):
+        WINDOW_NAME = 'AddTargetWin'
+        if cmds.window(WINDOW_NAME, exists=True):
+            cmds.deleteUI(WINDOW_NAME)
+
+        main_Win = cmds.window(WINDOW_NAME,title='Add target')
+        main_layout =cmds.columnLayout(adjustableColumn=True)
+
+
+
+        cmds.showWindow(main_Win)

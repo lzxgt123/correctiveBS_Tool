@@ -263,7 +263,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.check_ifnot_PoseGrp(self.torso_ListWidget_01)
         # 创建torso_sculpt布局
         self.torso_mirror_CB = QtWidgets.QCheckBox('Mirror')
-        self.torso_mirror_CB.setChecked(True)
+        self.torso_mirror_CB.setChecked(False)
         self.torso_sculpt_Btn = QtWidgets.QPushButton('Sculpt')
         self.torso_exit_Btn = QtWidgets.QPushButton('Exit')
 
@@ -566,29 +566,41 @@ class CorrectiveBsUI(QtWidgets.QDialog):
 
     def click_sculpt_Btn(self,ListWidget_01,ListWidget_02):
         baseGeo = self.baseGeo_LineEdit.text()
-        currectSelectItem = ListWidget_01.currentItem().text()
+        pose = ListWidget_01.currentItem().text()
         targetOri_Geo = self.return_defaultTargetGeo(self.targetGeo_LineEdit)
-        sculptGeo = '{}_{}_sculpt'.format(baseGeo,currectSelectItem)
-        if  not currectSelectItem.startswith('-'):
-            currectSelectItem_02 = ListWidget_02.currentItem().text()
+        sculptGeo = '{}_{}_sculpt'.format(baseGeo,pose)
 
-            # 获取baseGeo，并将其设置为参考模式
-            tool.set_refVis(baseGeo)
+        if  not pose.startswith('-'):
+            # 创建 tempSculptGrp
+            target = ListWidget_02.currentItem().text()
+            if target == '':
+                target = tool.bsTarget_input_dialog()
+            # 检查场景中是否存在以下对象，如缺少一个，则报错并返回
+            for item in [baseGeo,pose,target,targetOri_Geo]:
+                if not cmds.objExists(item):
+                    om.MGlobal_displayError('QBJ_Tip : can not find {}'.format(item))
+                    return
+
+            # 创建 tempSculptGrp，进入雕刻模式
+            tool.create_tempSculptGrp(baseGeo, pose, target, targetOri_Geo)
+
+            # 获取baseGeo,并将其设置为参考模式
+            if cmds.objExists(baseGeo):
+                tool.set_refVis(baseGeo)
             # 将sculpt_Btn及其余的item设置为不可选状态
             self.lock_allItem(ListWidget_01)
             # 设置baseGe,sculptGeo显示动画
-            tool.set_GeoVisAnimation(baseGeo,sculptGeo)
+            if cmds.objExists(sculptGeo):
+                tool.set_GeoVisAnimation(baseGeo,sculptGeo)
             # 设置控制器驱动动画
             self.click_setAnimation(ListWidget_01)
 
-            # 创建 tempSculptGrp
-            tool.create_tempSculptGrp(baseGeo,currectSelectItem,currectSelectItem_02,targetOri_Geo)
 
 
     def click_exit_Btn(self,ListWidget_01):
         baseGeo = self.baseGeo_LineEdit.text()
-        currectSelectItem = ListWidget_01.currentItem().text()
-        sculptGeo = '{}_{}_sculpt'.format(baseGeo, currectSelectItem)
+        pose = ListWidget_01.currentItem().text()
+        sculptGeo = '{}_{}_sculpt'.format(baseGeo, pose)
 
         # 删除控制器驱动动画
         self.click_delAnimation(ListWidget_01)
@@ -599,16 +611,16 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         # 获取baseGeo，并将其设置为正常模式
         tool.set_normalVis(baseGeo)
         # 删除 tempSculptGrp
-        tool.del_tempSculptGrp(currectSelectItem)
+        tool.del_tempSculptGrp(pose)
 
 
     def create_blendShape(self):
-
+        allPoseList = self.allPoseList
         # 为 baseGeo 创建blendShape，并将生成的target和bsNode加载到Gui中
         baseGeo = self.baseGeo_LineEdit.text()
         targetGeo = self.targetGeo_LineEdit.text()
         if baseGeo:
-            targetGeo_bsNode_list = tool.add_blendShape(baseGeo,self.targetGeo_LineEdit,targetGeo)
+            targetGeo_bsNode_list = tool.add_blendShape(baseGeo,self.targetGeo_LineEdit,targetGeo,allPoseList)
             # 在targetGeoGrp组上添加bsTargetInfo
             self.targetGeo_LineEdit.setText(str(targetGeo_bsNode_list[0]))
             self.blendshape_comboBox.clear()
@@ -639,7 +651,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
 
     def click_ListWidget01_item(self,baseGeo,blendShapeNode,ListWidget_01,ListWidget_02):
 
-        currectSelectItem = ListWidget_01.currentItem().text()
+        pose = ListWidget_01.currentItem().text()
 
         # 获取对应命名的target
         self.loadTarget(baseGeo, blendShapeNode, ListWidget_01, ListWidget_02)
@@ -654,9 +666,17 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         # 获取 bsTargetInfo
         self.loadBsTargetInfo(baseGeo,ListWidget_01,ListWidget_02)
         # 选中对应的fkCtrl
-        if not currectSelectItem.startswith('-'):
-            fkCtrl = 'FK' + currectSelectItem.split('_')[0] + '_' + currectSelectItem.split('_')[1]
+        if not pose.startswith('-'):
+            fkCtrl = 'FK' + pose.split('_')[0] + '_' + pose.split('_')[1]
             cmds.select(fkCtrl, r=True)
+
+        # 尝试选取ListWidget_02中的target
+        try:
+            for i in  range(ListWidget_02.count()):
+                if ListWidget_02.item(i).text() == pose:
+                    ListWidget_02.item(i).setSelected(True)
+        except:
+            pass
 
 
     def click_armListWidget01_item(self):
@@ -674,7 +694,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
     def click_fingerListWidget01_item(self):
         baseGeo = self.baseGeo_LineEdit.text()
         blendShapeNode = self.blendshape_comboBox.currentText()
-        currectSelectItem = self.finger_ListWidget_01.currentItem().text()
+        fingerPose = self.finger_ListWidget_01.currentItem().text()
         # 获取对应命名的target
         self.loadTarget(baseGeo, blendShapeNode,self.finger_ListWidget_01, self.finger_ListWidget_02)
         # 获取所选择的item对应的控制器的旋转数值
@@ -688,9 +708,16 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         # 获取 bsTargetInfo
         self.loadBsTargetInfo(baseGeo,self.finger_ListWidget_01, self.finger_ListWidget_02)
         # 选中对应的fkCtrl
-        if not currectSelectItem.startswith('-'):
-            fkCtrl = 'FK' + currectSelectItem.split('_')[0] + '_' + currectSelectItem.split('_')[1]
+        if not fingerPose.startswith('-'):
+            fkCtrl = 'FK' + fingerPose.split('_')[0] + '_' + fingerPose.split('_')[1]
             cmds.select(fkCtrl, r=True)
+        # 尝试选取ListWidget_02中的target
+        try:
+            for i in range(self.finger_ListWidget_02.count()):
+                if self.finger_ListWidget_02.item(i).text() == fingerPose:
+                    self.finger_ListWidget_02.item(i).setSelected(True)
+        except:
+            pass
 
 
     def click_torsoListWidget01_item(self):
@@ -700,24 +727,25 @@ class CorrectiveBsUI(QtWidgets.QDialog):
 
 
     def loadDriverInfo(self,ListWidget_01):
-        currectSelectItem = ListWidget_01.currentItem().text()
+        pose = ListWidget_01.currentItem().text()
         # 过滤以'-'开头的item
-        if not currectSelectItem.startswith('-'):
-            poseGrp = currectSelectItem.split('_')[0] + '_' + currectSelectItem.split('_')[1] + '_poseGrp'
+        if not pose.startswith('-'):
+            poseGrp = pose.split('_')[0] + '_' + pose.split('_')[1] + '_poseGrp'
             # 将poseGrp上的数据显示在driver_LineEdit中
             if cmds.objExists(poseGrp):
-                value = cmds.getAttr('{}.{}'.format(poseGrp, currectSelectItem))
-                self.driver_LineEdit.setText('{}.{}'.format(poseGrp, currectSelectItem))
+                value = cmds.getAttr('{}.{}'.format(poseGrp, pose))
+                self.driver_LineEdit.setText('{}.{}'.format(poseGrp, pose))
                 self.driver_value_LineEdit.setText('{}'.format(round(value, 4)))
-            else:
-                self.driver_LineEdit.setText('')
-                self.driver_value_LineEdit.setText('')
+        else:
+            self.driver_LineEdit.setText('')
+            self.driver_value_LineEdit.setText('')
 
 
     def loadBsTargetInfo(self,baseGeo,ListWidget_01,ListWidget_02):
         ListWidget_02.clear()
+        pose = ListWidget_01.currentItem().text()
         # 获取当前所选pose，对应的bsTargetInfo
-        bsTargetList = tool.check_exists_bsTargetInfo(baseGeo,ListWidget_01)
+        bsTargetList = tool.check_exists_bsTargetInfo(baseGeo,pose)
         if bsTargetList:
             for t in bsTargetList:
                 if t != '':
@@ -725,10 +753,10 @@ class CorrectiveBsUI(QtWidgets.QDialog):
 
 
     def loadTarget(self,baseGeo,blendShapeNode,ListWidget_01,ListWidget_02):
-        currectSelectItem = ListWidget_01.currentItem().text()
+        pose = ListWidget_01.currentItem().text()
         if blendShapeNode:
             # 过滤以'-'开头的item
-            if not currectSelectItem.startswith('-'):
+            if not pose.startswith('-'):
                 # 获取指点命名的target，并添加到ListWidget_02中
                 allTargets = cmds.aliasAttr(blendShapeNode, q=True)
                 targetName = []
@@ -736,9 +764,9 @@ class CorrectiveBsUI(QtWidgets.QDialog):
                     for i in range(0, len(allTargets), 2):
                         targetName.append(allTargets[i])
                     if targetName:
-                        if '{}_{}'.format(baseGeo,currectSelectItem) in targetName:
+                        if '{}_{}'.format(baseGeo,pose) in targetName:
                             ListWidget_02.clear()
-                            ListWidget_02.addItem(currectSelectItem)
+                            ListWidget_02.addItem(pose)
                         else:
                             ListWidget_02.clear()
 
@@ -757,9 +785,9 @@ class CorrectiveBsUI(QtWidgets.QDialog):
 
     def setCtrlRotation (self,ListWidget_01):
         rotateValue = self.returnRotateValue()
-        currectSelectItem = ListWidget_01.currentItem().text()
-        if not currectSelectItem.startswith('-'):
-            fkCtrl = 'FK' + currectSelectItem.split('_')[0]+'_'+currectSelectItem.split('_')[1]
+        pose = ListWidget_01.currentItem().text()
+        if not pose.startswith('-'):
+            fkCtrl = 'FK' + pose.split('_')[0]+'_'+pose.split('_')[1]
             if cmds.objExists(fkCtrl):
                 for rotate,value in rotateValue.items():
                     cmds.setAttr('{}.{}'.format(fkCtrl,rotate),float(value))
@@ -788,27 +816,27 @@ class CorrectiveBsUI(QtWidgets.QDialog):
     def set_RotateLineEdit_Value(self,ListWidget_01):
         self.driver_LineEdit.clear()
         self.clear_RotateLineEdit_Value()
-        currectSelectItem = ListWidget_01.currentItem().text()
-        hideGrp = currectSelectItem.replace(currectSelectItem.split('_')[-1],'poseGrp_Hide')
+        pose = ListWidget_01.currentItem().text()
+        hideGrp = pose.replace(pose.split('_')[-1],'poseGrp_Hide')
         if cmds.objExists(hideGrp):
-            valueList = cmds.getAttr('{}.{}'.format(hideGrp,currectSelectItem.split('_')[-1]))
+            valueList = cmds.getAttr('{}.{}'.format(hideGrp,pose.split('_')[-1]))
             self.rotate_LineEdit_01.setText(str(valueList[0][0]))
             self.rotate_LineEdit_02.setText(str(valueList[0][1]))
             self.rotate_LineEdit_03.setText(str(valueList[0][2]))
 
 
     def click_setAnimation(self,ListWidget_01):
-        currectSelectItem = ListWidget_01.currentItem().text()
+        pose = ListWidget_01.currentItem().text()
         self.set_RotateLineEdit_Value(ListWidget_01)
         rotateValueDict = self.returnRotateValue()
-        if not currectSelectItem.startswith('-'):
+        if not pose.startswith('-'):
             # 将时间滑块的范围调整成1-25帧
             try:
                 cmds.playbackOptions(edit=True,min=1,max=25,ast=1,aet=25)
             except:
                 pass
             # 设置对应的fkCtrl的动画
-            fkCtrl = 'FK' + currectSelectItem.split('_')[0]+'_'+currectSelectItem.split('_')[1]
+            fkCtrl = 'FK' + pose.split('_')[0]+'_'+pose.split('_')[1]
             if cmds.objExists(fkCtrl):
                 for axis ,value in rotateValueDict.items():
                     self.del_animNode(fkCtrl,axis)
@@ -819,9 +847,9 @@ class CorrectiveBsUI(QtWidgets.QDialog):
 
 
     def click_delAnimation(self,ListWidget_01):
-        currectSelectItem = ListWidget_01.currentItem().text()
-        if not currectSelectItem.startswith('-'):
-            fkCtrl = 'FK' + currectSelectItem.split('_')[0]+'_'+currectSelectItem.split('_')[1]
+        pose = ListWidget_01.currentItem().text()
+        if not pose.startswith('-'):
+            fkCtrl = 'FK' + pose.split('_')[0]+'_'+pose.split('_')[1]
             if cmds.objExists(fkCtrl):
                 animNodeList = cmds.listConnections(fkCtrl,type='animCurveTA')
                 if animNodeList:
@@ -839,12 +867,13 @@ class CorrectiveBsUI(QtWidgets.QDialog):
 
 
     def click_updatePose(self, ListWidget_01):
-        currectSelectItem = ListWidget_01.currentItem().text()
-        if not currectSelectItem.startswith('-'):
+        pose = ListWidget_01.currentItem().text()
 
-            tool.update_poseHide_Info(ListWidget_01)
-            tool.update_PoseLocPosition(ListWidget_01)
-            tool.update_animNode(ListWidget_01)
+        if not pose.startswith('-'):
+
+            tool.update_poseHide_Info(pose)
+            tool.update_PoseLocPosition(pose)
+            tool.update_animNode(pose)
 
             om.MGlobal_displayInfo('QBJ_Tip : Update pose successfully !')
 
@@ -865,12 +894,12 @@ class CorrectiveBsUI(QtWidgets.QDialog):
 
     def loadFingerDriverInfo(self):
         fingerPoseGrp = 'Finger_L_poseGrp'
-        currectSelectItem = self.finger_ListWidget_01.currentItem().text()
+        fingerPose = self.finger_ListWidget_01.currentItem().text()
         # 将poseGrp上的数据显示在driver_LineEdit中
         if cmds.objExists(fingerPoseGrp):
-            if not currectSelectItem.startswith('-'):
-                value = cmds.getAttr('{}.{}'.format(fingerPoseGrp, currectSelectItem))
-                self.driver_LineEdit.setText('{}.{}    {}'.format(fingerPoseGrp, currectSelectItem, round(value, 4)))
+            if not fingerPose.startswith('-'):
+                value = cmds.getAttr('{}.{}'.format(fingerPoseGrp, fingerPose))
+                self.driver_LineEdit.setText('{}.{}    {}'.format(fingerPoseGrp, fingerPose, round(value, 4)))
         else:
             self.driver_LineEdit.setText('')
 
@@ -878,11 +907,11 @@ class CorrectiveBsUI(QtWidgets.QDialog):
     def set_fingerRotateLineEdit_Value(self):
         self.driver_LineEdit.clear()
         self.clear_RotateLineEdit_Value()
-        currectSelectItem = self.finger_ListWidget_01.currentItem().text()
+        fingerPose = self.finger_ListWidget_01.currentItem().text()
         hideGrp = 'Finger_L_poseGrp_Hide'
         if cmds.objExists(hideGrp):
-            if not currectSelectItem.startswith('-'):
-                valueList = cmds.getAttr('{}.{}'.format(hideGrp,currectSelectItem))
+            if not fingerPose.startswith('-'):
+                valueList = cmds.getAttr('{}.{}'.format(hideGrp,fingerPose))
                 self.rotate_LineEdit_01.setText(str(valueList[0][0]))
                 self.rotate_LineEdit_02.setText(str(valueList[0][1]))
                 self.rotate_LineEdit_03.setText(str(valueList[0][2]))
@@ -891,7 +920,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
     def lock_allItem(self,ListWidget_01):
         # 将sculpt_Btn设置为不可选
         self.arm_sculpt_Btn.setEnabled(False)
-        currectSelectItem = ListWidget_01.currentItem().text()
+        pose = ListWidget_01.currentItem().text()
         # 将除了选择的当前item以外的,都设置为不可选状态
         for i in range(ListWidget_01.count()):
             pose = ListWidget_01.item(i)
