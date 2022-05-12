@@ -580,33 +580,28 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         om.MGlobal_displayInfo('QBJ_Tip : Delete blendShape Node successfully !')
 
 
-    def click_sculpt_Btn(self,ListWidget_01):
+    def click_sculpt_Btn(self,ListWidget_01,mirror_CB):
         baseGeo = self.baseGeo_LineEdit.text()
         pose = ListWidget_01.currentItem().text()
         targetOri_Geo = self.return_defaultTargetGeo(self.targetGeo_LineEdit)
-        sculptGeo = '{}_{}_sculpt'.format(baseGeo,pose)
+        bsNode = self.blendshape_comboBox.currentText()
+        mirror = mirror_CB.isChecked()
 
         if  not pose.startswith('-'):
-
             # 检查场景中是否存在以下对象，如缺少一个，则报错并返回
             for item in [baseGeo,pose,targetOri_Geo]:
                 if not cmds.objExists(item):
                     om.MGlobal_displayError('QBJ_Tip : Can not find {} !!!'.format(item))
                     return
 
-            # 创建 tempSculptGrp，进入雕刻模式
-            tool.create_tempSculptGrp(baseGeo, pose, targetOri_Geo)
-
-            # 获取baseGeo,并将其设置为参考模式
-            if cmds.objExists(baseGeo):
-                tool.set_refVis(baseGeo)
             # 将sculpt_Btn及其余的item设置为不可选状态
             self.lock_allItem(ListWidget_01)
-            # 设置baseGe,sculptGeo显示动画
-            if cmds.objExists(sculptGeo):
-                tool.set_GeoVisAnimation(baseGeo,sculptGeo)
             # 设置控制器驱动动画
             self.click_setAnimation(ListWidget_01)
+            # 创建 tempSculptGrp，进入雕刻模式
+            if not pose.startswith('-'):
+                poseGrp = pose.split('_')[0] + '_' + pose.split('_')[1] + '_poseGrp'
+                tool.enterSculptMode(baseGeo,bsNode,pose,targetOri_Geo,mirror,poseGrp)
 
 
     def click_exit_Btn(self,ListWidget_01,):

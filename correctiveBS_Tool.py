@@ -384,22 +384,31 @@ class CorrectiveBsTool(object):
         cmds.setAttr('{}.v'.format(baseGeo),1)
 
 
-    def create_tempSculptGrp(self,baseGeo,pose,targetOri_Geo):
+    def enterSculptMode(self,baseGeo,bsNode,pose,targetOri_Geo,mirror,poseGrp):
+        sculptGeo = '{}_{}_sculpt'.format(baseGeo, pose)
+
+        # 检查场景中是否在target_Geo，没有就创建，并放置于bsTarget_Grp中
+        self.create_targetGeo(baseGeo, pose, targetOri_Geo, mirror)
+        # 将生成的 target
+        self.add_newTargetGeo_To_BsNode(baseGeo, pose, targetOri_Geo, mirror, bsNode,poseGrp)
+        # 创建修型所需的临时雕刻模型组
+        self.create_tempSculptGrp(baseGeo,bsNode,pose,targetOri_Geo)
+        # 获取baseGeo,并将其设置为参考模式
+        self.set_refVis(baseGeo)
+        # 设置baseGe,sculptGeo显示动画
+        self.set_GeoVisAnimation(baseGeo, sculptGeo)
+
+
+    def create_tempSculptGrp(self,baseGeo,bsNode,pose,targetOri_Geo):
         tempSculptGrp = '{}_tempSculptGrp'.format(pose)
-        target_Geo = '{}_{}'.format(baseGeo,pose)
-        bsTarget_Grp = '{}_bsTarget_Grp'.format(baseGeo)
-
-        if not cmds.objExists(target_Geo):
-            target_Geo = cmds.duplicate(targetOri_Geo,name = '{}_{}'.format(baseGeo,pose) )
-            cmds.parent(target_Geo,bsTarget_Grp)
-
+        # 检查场景中是否存在 tempSculptGrp
         if not cmds.objExists(tempSculptGrp):
             # 创建tempSculptGrp
             tempSculptGrp = cmds.group(name='{}_tempSculptGrp'.format(pose),world=True,empty=True)
 
         # 复制baseGeo，得到sculptGeo,并将显示模式设置为正常
         sculptGeo = cmds.duplicate(baseGeo,name = '{}_{}_sculpt'.format(baseGeo,pose))
-        self.set_normalVis(sculptGeo)
+        self.set_sculptGeo_color(sculptGeo)
 
         # 创建inverted_Geo
         inverted_Geo = cvshapeinverter.invert(baseGeo, sculptGeo)
@@ -410,18 +419,109 @@ class CorrectiveBsTool(object):
         cmds.parent(sculptGeo,inverted_Geo,inverted_neg_Geo,tempSculptGrp)
 
 
+    def create_targetGeo(self,baseGeo,pose,targetOri_Geo,mirror):
+        '''
+        检查场景中是否在target_Geo 和 R_target_Geo，没有就创建，并放置于bsTarget_Grp中
+        :param baseGeo:
+        :param pose:
+        :param targetOri_Geo:
+        :param mirror:
+        :return:
+        '''
+        target_Geo = '{}_{}'.format(baseGeo, pose)
+        R_target_Geo = '{}_{}'.format(baseGeo, pose.replace('L_', 'R_'))
+        bsTarget_Grp = '{}_bsTarget_Grp'.format(baseGeo)
+        targetGeoList = []
 
-    def check_exists_bsTargetInfo(self,baseGeo,pose):
-        if baseGeo:
-         bsTargetGrp = '{}_bsTarget_Grp'.format(baseGeo)
-         if bsTargetGrp:
-             if not pose.startswith('-'):
-                bsTargetInfo = cmds.getAttr('{}.{}'.format(bsTargetGrp, pose))
-                if bsTargetInfo:
-                    bsTargetList = bsTargetInfo.split(';')
-                    return bsTargetList
-                else:
-                    return None
+        # 检查场景中是否有 bsTarget_Grp ，没有就报错并返回
+        if not cmds.objExists(bsTarget_Grp):
+            om.MGlobal_displayError('QBJ_Tip : Can not find {} !!!'.format(bsTarget_Grp))
+            return None
+
+        # 检查场景中是否存在 target_Geo 和 R_target_Geo,没有就创建
+        if not cmds.objExists(target_Geo):
+            target_Geo = cmds.duplicate(targetOri_Geo, name='{}_{}'.format(baseGeo, pose))
+            targetGeoList.append(target_Geo)
+
+        if not cmds.objExists(R_target_Geo):
+            if mirror:
+                R_target_Geo = cmds.duplicate(targetOri_Geo, name='{}_{}'.format(baseGeo, pose.replace('L_', 'R_')))
+                targetGeoList.append(R_target_Geo)
+        # 将 target_Geo和R_target_Geo 放置在bsTarget_Grp中
+        cmds.parent(target_Geo, R_target_Geo, bsTarget_Grp)
+
+        return targetGeoList
+
+
+    def add_newTargetGeo_To_BsNode(self, baseGeo, pose, targetOri_Geo, mirror, bsNode,poseGrp):
+        targetGeoList = self.create_targetGeo(baseGeo, pose, targetOri_Geo, mirror)
+        index = len(cmds.aliasAttr(bsNode, q=True))
+        # 如果存在 新增的修型目标体，就把他添加进 blendShape 中
+        if targetGeoList:
+            for target in targetGeoList:
+                if not self.exist_Target(bsNode, target):
+                    cmds.blendShape(bsNode, edit=True, t=(baseGeo, index, target, 1.0))
+                    self.connect_poseGrp_to_target(baseGeo,pose,bsNode,poseGrp,target)
+                    index += 1
+
+
+    def connect_poseGrp_to_target(self,baseGeo,pose,bsNode,poseGrp,target):
+
+        # 创建一个animUU 节点
+        animCurveUU_node = cmds.createNode('animCurveUU',name ='{}_{}_{}'.format(baseGeo,pose,bsNode))
+
+        # 将 animUU上的 input 和 output 属性分别连接给poseGrp 和 blendShape上的target
+        cmds.connectAttr('{}.{}'.format(poseGrp,pose),'{}.input'.format(animCurveUU_node))
+        cmds.connectAttr('{}.output'.format(animCurveUU_node),'{}.{}'.format(bsNode,target))
+
+        # 设置 animCurveUU_node上的属性，将
+        cmds.setKeyframe(animCurveUU_node, float=0, value=0, itt='Flat', ott='Flat')
+        cmds.setKeyframe(animCurveUU_node, float=45, value=0, itt='Flat', ott='Flat')
+
+
+
+
+    def exist_Target(self,bsNode,target):
+        allTargets = cmds.aliasAttr(bsNode, q=True)
+        targetName = []
+        for i in range(0, len(allTargets), 2):
+            targetName.append(allTargets[i])
+        if target in targetName:
+            return True
+        else:
+            return None
+
+
+    def set_sculptGeo_color(self,sculptGeo):
+        sculptGeo_blinn = '{}_rigSculpt_skin'.format(sculptGeo)
+        rigSculpt_skinSG = '{}_SG'.format(sculptGeo_blinn)
+        # 如果场景中没有sculptGeo_blinn ,就创建
+        if not cmds.objExists(sculptGeo_blinn):
+            sculptGeo_blinn = cmds.shadingNode('blinn', asShader=True,name='rigSculpt_skin')
+            pm.mel.assignCreatedShader("blinn" ,'',sculptGeo_blinn,sculptGeo)
+            # 设置 sculptGeo_blinn 参数
+            color = [0.168, 0.434, 0.679]
+            ambientColor = [0.1, 0.1, 0.1]
+            eccentricity = [0.5]
+            cmds.setAttr('{}.color'.format(sculptGeo_blinn), color[0], color[1], color[2], type='double3')
+            cmds.setAttr('{}.ambientColor'.format(sculptGeo_blinn), ambientColor[0], ambientColor[1], ambientColor[2],
+                         type='double3')
+            cmds.setAttr('{}.eccentricity'.format(sculptGeo_blinn), eccentricity[0])
+        else:
+            cmds.sets(sculptGeo,forceElement=rigSculpt_skinSG,edit=True)
+
+
+    # def check_exists_bsTargetInfo(self,baseGeo,pose):
+    #     if baseGeo:
+    #      bsTargetGrp = '{}_bsTarget_Grp'.format(baseGeo)
+    #      if bsTargetGrp:
+    #          if not pose.startswith('-'):
+    #             bsTargetInfo = cmds.getAttr('{}.{}'.format(bsTargetGrp, pose))
+    #             if bsTargetInfo:
+    #                 bsTargetList = bsTargetInfo.split(';')
+    #                 return bsTargetList
+    #             else:
+    #                 return None
 
 
     def set_bsTargetInfo(self,baseGeo,pose,target):
