@@ -94,7 +94,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
 
 
     def setFkModel(self):
-        # 将 所有控制器设置为fk模式
+        # 将所有控制器设置为fk模式
         model = self.radionBtn_Grp.checkedButton().text()
         if model == 'ADV':
             try:
@@ -462,13 +462,13 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.baseGeo_Btn.clicked.connect(self.click_BaseGeoLoad_Btn)
         self.targetGeo_Btn.clicked.connect(self.click_targetGeoLoad_Btn)
         self.del_Btn.clicked.connect(self.click_delBs_Btn)
-        self.arm_sculpt_Btn.clicked.connect(lambda :self.click_sculpt_Btn(self.arm_ListWidget_01))
+        self.arm_sculpt_Btn.clicked.connect(lambda :self.click_sculpt_Btn(self.arm_ListWidget_01,self.arm_mirror_CB))
         self.arm_exit_Btn.clicked.connect(lambda :self.click_exit_Btn(self.arm_ListWidget_01))
-        self.leg_sculpt_Btn.clicked.connect(lambda :self.click_sculpt_Btn(self.leg_ListWidget_01))
+        self.leg_sculpt_Btn.clicked.connect(lambda :self.click_sculpt_Btn(self.leg_ListWidget_01,self.leg_mirror_CB))
         self.leg_exit_Btn.clicked.connect(lambda :self.click_exit_Btn(self.leg_ListWidget_01))
-        self.finger_sculpt_Btn.clicked.connect(lambda :self.click_sculpt_Btn(self.finger_ListWidget_01))
+        self.finger_sculpt_Btn.clicked.connect(lambda :self.click_sculpt_Btn(self.finger_ListWidget_01,self.finger_mirror_CB))
         self.finger_exit_Btn.clicked.connect(lambda :self.click_exit_Btn(self.finger_ListWidget_01))
-        self.torso_sculpt_Btn.clicked.connect(lambda :self.click_sculpt_Btn(self.torso_ListWidget_01))
+        self.torso_sculpt_Btn.clicked.connect(lambda :self.click_sculpt_Btn(self.torso_ListWidget_01,self.finger_mirror_CB))
         self.torso_exit_Btn.clicked.connect(lambda :self.click_exit_Btn(self.torso_ListWidget_01))
 
 
@@ -583,13 +583,13 @@ class CorrectiveBsUI(QtWidgets.QDialog):
     def click_sculpt_Btn(self,ListWidget_01,mirror_CB):
         baseGeo = self.baseGeo_LineEdit.text()
         pose = ListWidget_01.currentItem().text()
-        targetOri_Geo = self.return_defaultTargetGeo(self.targetGeo_LineEdit)
+        targetOri_Geo = self.targetGeo_LineEdit.text()
         bsNode = self.blendshape_comboBox.currentText()
         mirror = mirror_CB.isChecked()
 
         if  not pose.startswith('-'):
             # 检查场景中是否存在以下对象，如缺少一个，则报错并返回
-            for item in [baseGeo,pose,targetOri_Geo]:
+            for item in [baseGeo,targetOri_Geo]:
                 if not cmds.objExists(item):
                     om.MGlobal_displayError('QBJ_Tip : Can not find {} !!!'.format(item))
                     return
@@ -920,7 +920,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
             pose = ListWidget_01.item(i)
             currentPose= ListWidget_01.currentItem()
             pose.setFlags(pose.flags() & ~QtCore.Qt.ItemIsEnabled)
-            currentPose.setFlags(Union[pose.flags(), QtCore.Qt.ItemIsEnabled])
+            currentPose.setFlags(pose.flags() | QtCore.Qt.ItemIsEnabled)
 
 
     def unlock_allItem(self,ListWidget_01):
