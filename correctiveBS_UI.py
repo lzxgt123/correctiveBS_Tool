@@ -10,9 +10,6 @@ launch :
 '''
 
 from itertools import chain
-
-from typing import Union
-
 import pymel.core as pm
 import maya.OpenMaya as om
 import maya.cmds as cmds
@@ -152,6 +149,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         # 创建加载blendShape 组件
         self.blendshape_Label = QtWidgets.QLabel('blendShape :')
         self.blendshape_comboBox = QtWidgets.QComboBox()
+        self.add_Btn = QtWidgets.QPushButton('Add')
         self.del_Btn = QtWidgets.QPushButton('Del')
 
         # 创建分割线 组件
@@ -323,15 +321,15 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.load_GridLayout.setContentsMargins(2, 2, 2, 2)
         self.load_GridLayout.setVerticalSpacing(4)
         self.load_GridLayout.addWidget(self.baseGeo_Label,0,0,1,1)
-        self.load_GridLayout.addWidget(self.baseGeo_LineEdit, 0, 1, 1, 4)
-        self.load_GridLayout.addWidget(self.baseGeo_Btn, 0, 5, 1, 1)
+        self.load_GridLayout.addWidget(self.baseGeo_LineEdit, 0, 1, 1, 6)
+        self.load_GridLayout.addWidget(self.baseGeo_Btn, 0, 7, 1, 1)
         self.load_GridLayout.addWidget(self.targetGeo_Label, 1, 0, 1, 1)
-        self.load_GridLayout.addWidget(self.targetGeo_LineEdit, 1, 1, 1, 4)
-        self.load_GridLayout.addWidget(self.targetGeo_Btn, 1, 5, 1, 1)
+        self.load_GridLayout.addWidget(self.targetGeo_LineEdit, 1, 1, 1, 6)
+        self.load_GridLayout.addWidget(self.targetGeo_Btn, 1, 7, 1, 1)
         self.load_GridLayout.addWidget(self.blendshape_Label, 2, 0, 1, 1)
-        self.load_GridLayout.addWidget(self.blendshape_comboBox, 2, 1, 1, 4)
-        # self.load_GridLayout.addWidget(self.add_Btn, 3, 4, 1, 1)
-        self.load_GridLayout.addWidget(self.del_Btn, 2, 5, 1, 1)
+        self.load_GridLayout.addWidget(self.blendshape_comboBox, 2, 1, 1,5)
+        self.load_GridLayout.addWidget(self.add_Btn, 2, 6, 1, 1)
+        self.load_GridLayout.addWidget(self.del_Btn, 2, 7, 1, 1)
 
         # 创建控制器类型 布局
         self.type_layout = QtWidgets.QHBoxLayout()
@@ -461,15 +459,28 @@ class CorrectiveBsUI(QtWidgets.QDialog):
 
         self.baseGeo_Btn.clicked.connect(self.click_BaseGeoLoad_Btn)
         self.targetGeo_Btn.clicked.connect(self.click_targetGeoLoad_Btn)
+        self.add_Btn.clicked.connect(self.click_addBs_Btn)
         self.del_Btn.clicked.connect(self.click_delBs_Btn)
-        self.arm_sculpt_Btn.clicked.connect(lambda :self.click_sculpt_Btn(self.arm_ListWidget_01,self.arm_mirror_CB))
-        self.arm_exit_Btn.clicked.connect(lambda :self.click_exit_Btn(self.arm_ListWidget_01))
-        self.leg_sculpt_Btn.clicked.connect(lambda :self.click_sculpt_Btn(self.leg_ListWidget_01,self.leg_mirror_CB))
-        self.leg_exit_Btn.clicked.connect(lambda :self.click_exit_Btn(self.leg_ListWidget_01))
-        self.finger_sculpt_Btn.clicked.connect(lambda :self.click_sculpt_Btn(self.finger_ListWidget_01,self.finger_mirror_CB))
-        self.finger_exit_Btn.clicked.connect(lambda :self.click_exit_Btn(self.finger_ListWidget_01))
-        self.torso_sculpt_Btn.clicked.connect(lambda :self.click_sculpt_Btn(self.torso_ListWidget_01,self.finger_mirror_CB))
-        self.torso_exit_Btn.clicked.connect(lambda :self.click_exit_Btn(self.torso_ListWidget_01))
+        self.arm_sculpt_Btn.clicked.connect(lambda :self.click_sculpt_Btn(self.arm_ListWidget_01,
+                                                                          self.arm_sculpt_Btn,
+                                                                          self.arm_mirror_CB))
+        self.arm_exit_Btn.clicked.connect(lambda :self.click_exit_Btn(self.arm_ListWidget_01,
+                                                                      self.arm_sculpt_Btn))
+        self.leg_sculpt_Btn.clicked.connect(lambda :self.click_sculpt_Btn(self.leg_ListWidget_01,
+                                                                          self.leg_sculpt_Btn,
+                                                                          self.leg_mirror_CB))
+        self.leg_exit_Btn.clicked.connect(lambda :self.click_exit_Btn(self.leg_ListWidget_01,
+                                                                      self.leg_sculpt_Btn))
+        self.finger_sculpt_Btn.clicked.connect(lambda :self.click_sculpt_Btn(self.finger_ListWidget_01,
+                                                                             self.finger_sculpt_Btn,
+                                                                             self.finger_mirror_CB))
+        self.finger_exit_Btn.clicked.connect(lambda :self.click_exit_Btn(self.finger_ListWidget_01,
+                                                                         self.finger_sculpt_Btn))
+        self.torso_sculpt_Btn.clicked.connect(lambda :self.click_sculpt_Btn(self.torso_ListWidget_01,
+                                                                            self.torso_sculpt_Btn,
+                                                                            self.finger_mirror_CB))
+        self.torso_exit_Btn.clicked.connect(lambda :self.click_exit_Btn(self.torso_ListWidget_01,
+                                                                        self.torso_sculpt_Btn))
 
 
         # self.arm_CreateBtn.clicked.connect(self.click_armCreate_Btn)
@@ -562,6 +573,13 @@ class CorrectiveBsUI(QtWidgets.QDialog):
             self.loadTargetConfirmDialog()
 
 
+    def click_addBs_Btn(self):
+        # 获取 baseGeo
+        baseGeo = self.baseGeo_LineEdit.text()
+        if  not tool.get_blendshape(baseGeo):
+            self.addBlendShapeConfirmDialog()
+
+
     def click_delBs_Btn(self):
 
         bsNode = self.blendshape_comboBox.currentText()
@@ -580,45 +598,50 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         om.MGlobal_displayInfo('QBJ_Tip : Delete blendShape Node successfully !')
 
 
-    def click_sculpt_Btn(self,ListWidget_01,mirror_CB):
+    def click_sculpt_Btn(self,ListWidget_01,sculpt_Btn,mirror_CB):
         baseGeo = self.baseGeo_LineEdit.text()
-        pose = ListWidget_01.currentItem().text()
         targetOri_Geo = self.targetGeo_LineEdit.text()
         bsNode = self.blendshape_comboBox.currentText()
         mirror = mirror_CB.isChecked()
+        # 检查场景中是否存在以下对象，如缺少一个，则报错并返回
+        for geo in [baseGeo, targetOri_Geo]:
+            if not cmds.objExists(geo):
+                om.MGlobal_displayError('QBJ_Tip : Can not find {} !!!'.format(geo))
+                return
 
-        if  not pose.startswith('-'):
-            # 检查场景中是否存在以下对象，如缺少一个，则报错并返回
-            for item in [baseGeo,targetOri_Geo]:
-                if not cmds.objExists(item):
-                    om.MGlobal_displayError('QBJ_Tip : Can not find {} !!!'.format(item))
-                    return
+        # 在有选中的pose后，才会运行
+        if ListWidget_01.currentItem():
+            pose = ListWidget_01.currentItem().text()
 
-            # 将sculpt_Btn及其余的item设置为不可选状态
-            self.lock_allItem(ListWidget_01)
-            # 设置控制器驱动动画
-            self.click_setAnimation(ListWidget_01)
-            # 创建 tempSculptGrp，进入雕刻模式
-            if not pose.startswith('-'):
+            if  not pose.startswith('-'):
+                # 将sculpt_Btn及其余的item设置为不可选状态
+                self.lock_allItem(ListWidget_01,sculpt_Btn)
+                # 创建 tempSculptGrp，进入雕刻模式
                 poseGrp = pose.split('_')[0] + '_' + pose.split('_')[1] + '_poseGrp'
                 tool.enterSculptMode(baseGeo,bsNode,pose,targetOri_Geo,mirror,poseGrp)
+                # 设置控制器驱动动画
+                self.click_setAnimation(ListWidget_01)
 
 
-    def click_exit_Btn(self,ListWidget_01,):
-        baseGeo = self.baseGeo_LineEdit.text()
-        pose = ListWidget_01.currentItem().text()
-        sculptGeo = '{}_{}_sculpt'.format(baseGeo, pose)
+    def click_exit_Btn(self,ListWidget_01,sculpt_Btn):
 
-        # 删除控制器驱动动画
-        self.click_delAnimation(ListWidget_01)
-        # 删除 baseGe,sculptGeo显示动画
-        tool.del_GeoVisAnimation(baseGeo, sculptGeo)
-        # 将 sculpt_Btn及其余的item设置为可选状态
-        self.unlock_allItem(ListWidget_01)
-        # 获取baseGeo，并将其设置为正常模式
-        tool.set_normalVis(baseGeo)
-        # 删除 tempSculptGrp
-        tool.del_tempSculptGrp(pose)
+        if ListWidget_01.currentItem():
+            baseGeo = self.baseGeo_LineEdit.text()
+            pose = ListWidget_01.currentItem().text()
+
+            if not pose.startswith('-'):
+                sculptGeo = '{}_{}_sculpt'.format(baseGeo, pose)
+
+                # 删除控制器驱动动画
+                self.click_delAnimation(ListWidget_01)
+                # 删除 baseGe,sculptGeo显示动画
+                tool.del_GeoVisAnimation(baseGeo, sculptGeo)
+                # 将 sculpt_Btn及其余的item设置为可选状态
+                self.unlock_allItem(ListWidget_01,sculpt_Btn)
+                # 获取baseGeo，并将其设置为正常模式
+                tool.set_normalVis(baseGeo)
+                # 删除 tempSculptGrp
+                tool.del_tempSculptGrp(pose)
 
 
     def create_blendShape(self):
@@ -627,6 +650,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         baseGeo = self.baseGeo_LineEdit.text()
         targetGeo = self.targetGeo_LineEdit.text()
         if baseGeo:
+
             targetGeo_bsNode_list = tool.add_blendShape(baseGeo,targetGeo,allPoseList)
             # 在targetGeoGrp组上添加bsTargetInfo
             self.targetGeo_LineEdit.setText(str(targetGeo_bsNode_list[0]))
@@ -810,7 +834,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
 
     def click_setAnimation(self,ListWidget_01):
         pose = ListWidget_01.currentItem().text()
-        self.set_RotateLineEdit_Value(ListWidget_01)
+        # self.set_RotateLineEdit_Value(ListWidget_01)
         rotateValueDict = self.returnRotateValue()
         if not pose.startswith('-'):
             # 将时间滑块的范围调整成1-25帧
@@ -841,7 +865,8 @@ class CorrectiveBsUI(QtWidgets.QDialog):
                 # 删除控制器动画之后，将控制器上的数值恢复默认
                 for axis in ['rx','ry','rz']:
                     cmds.setAttr('{}.{}'.format(fkCtrl,axis),0)
-
+        # 将时间轴设置为第一帧
+        cmds.currentTime(1)
 
     def del_animNode(self,fkCtrl,axis):
         animNode = cmds.listConnections('{}.{}'.format(fkCtrl,axis),type='animCurveTA')
@@ -911,9 +936,9 @@ class CorrectiveBsUI(QtWidgets.QDialog):
                 self.rotate_LineEdit_03.setText(str(valueList[0][2]))
 
 
-    def lock_allItem(self,ListWidget_01):
+    def lock_allItem(self,ListWidget_01,sculpt_Btn):
         # 将sculpt_Btn设置为不可选
-        self.arm_sculpt_Btn.setEnabled(False)
+        sculpt_Btn.setEnabled(False)
         pose = ListWidget_01.currentItem().text()
         # 将除了选择的当前item以外的,都设置为不可选状态
         for i in range(ListWidget_01.count()):
@@ -923,12 +948,12 @@ class CorrectiveBsUI(QtWidgets.QDialog):
             currentPose.setFlags(pose.flags() | QtCore.Qt.ItemIsEnabled)
 
 
-    def unlock_allItem(self,ListWidget_01):
+    def unlock_allItem(self,ListWidget_01,sculpt_Btn):
         # 将sculpt_Btn设置为可选
-        self.arm_sculpt_Btn.setEnabled(True)
+        sculpt_Btn.setEnabled(True)
         # 将除了选择的当前item以外的,都设置为可选状态
         for i in range(ListWidget_01.count()):
             pose = ListWidget_01.item(i)
-            pose.setFlags(Union[pose.flags(), QtCore.Qt.ItemIsEnabled])
+            pose.setFlags(pose.flags() | QtCore.Qt.ItemIsEnabled)
 
 
