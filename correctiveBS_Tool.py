@@ -119,7 +119,7 @@ class CorrectiveBsTool(object):
             om.MGlobal_displayWarning('QBJ_Tip : Please select only one object !! ')
 
 
-    def return_defaultTargetGeo(self, baseGeo):
+    def return_targetOriGeo(self, baseGeo):
         if baseGeo:
             targetGeo = baseGeo + '_target'
             if cmds.objExists(targetGeo):
@@ -183,6 +183,9 @@ class CorrectiveBsTool(object):
                     return default_targetGeoName,blendShapeNode
             else:
                 targetGeo = cmds.duplicate(baseGeo,name = '{}_target'.format(baseGeo))
+                attrs_list = ['.tx', '.ty', '.tz', '.rx', '.ry', '.rz', '.sx', '.sy', '.sz', '.v']
+                for attr in attrs_list:
+                    cmds.setAttr('{}{}'.format(targetGeo[0], attr), lock=False)
                 cmds.parent(targetGeo, bsTargetGrp)
                 cmds.setAttr('{}.v'.format(targetGeo[0]),0)
                 cmds.select(cl=True)
@@ -276,8 +279,8 @@ class CorrectiveBsTool(object):
             currectPoseLoc = pose + '_loc'
             currectPoseReaderLoc = pose.split('_')[0] + '_' + pose.split('_')[
                 1] + '_poseReader_loc'
-            # 将PoseLoc定位到新的位置
 
+            # 将PoseLoc定位到新的位置
             for axis in ['tx','ty','tz']:
                 cmds.setAttr('{}.{}'.format(currectPoseLoc,axis),lock=False)
 
@@ -290,20 +293,20 @@ class CorrectiveBsTool(object):
 
     def update_poseHide_Info(self,pose):
         # 获取当前选择到的控制器
-        selectCtrl = cmds.ls(sl=True, type='transform')
-
+        # selectCtrl = cmds.ls(sl=True, type='transform')
         if not pose.startswith('-'):
             fkCtrl = 'FK' + pose.split('_')[0]+'_'+pose.split('_')[1]
             poseGrp_Hide = pose.split('_')[0]+'_'+pose.split('_')[1] + '_poseGrp_Hide'
             attr = pose.split('_')[-1]
 
             # 如果所选的控制器是正确的控制器，则获取此时控制器上的rotate数值，并将数值重新设置给对应的属性
-            if selectCtrl:
-                if selectCtrl[0] == fkCtrl:
-                    valueList = [cmds.getAttr('{}.{}'.format(selectCtrl[0],axis)) for axis in ['rx','ry','rz']]
-                    cmds.setAttr('{}.{}'.format(poseGrp_Hide,attr),valueList[0],valueList[1],valueList[2])
-                else:
-                    om.MGlobal_displayError('QBJ_Tip : Please select relevant controller !!!')
+            if fkCtrl:
+                # if selectCtrl[0] == fkCtrl:
+                valueList = [cmds.getAttr('{}.{}'.format(fkCtrl,axis)) for axis in ['rx','ry','rz']]
+
+                cmds.setAttr('{}.{}'.format(poseGrp_Hide,attr),valueList[0],valueList[1],valueList[2])
+                # else:
+                #     om.MGlobal_displayError('QBJ_Tip : Please select relevant controller !!!')
             else:
                 om.MGlobal_displayError('QBJ_Tip : Please select one controller !!!')
 
@@ -324,20 +327,19 @@ class CorrectiveBsTool(object):
 
 
     def update_fingerPoseHide_Info(self,pose):
-        # 获取当前选择到的控制器
-        selectCtrl = cmds.ls(sl=True, type='transform')
+        # # 获取当前选择到的控制器
+        # selectCtrl = cmds.ls(sl=True, type='transform')
 
         if not pose.startswith('-'):
             fkCtrl = 'FK' + pose.split('_')[0] + '_' + pose.split('_')[1]
             poseGrp_Hide = 'Finger_L_poseGrp_Hide'
-
             # 如果所选的控制器是正确的控制器，则获取此时控制器上的rotate数值，并将数值重新设置给对应的属性
-            if selectCtrl:
-                if selectCtrl[0] == fkCtrl:
-                    valueList = [cmds.getAttr('{}.{}'.format(selectCtrl[0], axis)) for axis in ['rx', 'ry', 'rz']]
-                    cmds.setAttr('{}.{}'.format(poseGrp_Hide, pose), valueList[0], valueList[1], valueList[2])
-                else:
-                    om.MGlobal_displayError('QBJ_Tip : Please select relevant controller !!!')
+            if fkCtrl:
+                # if selectCtrl[0] == fkCtrl:
+                valueList = [cmds.getAttr('{}.{}'.format(fkCtrl, axis)) for axis in ['rx', 'ry', 'rz']]
+                cmds.setAttr('{}.{}'.format(poseGrp_Hide, pose), valueList[0], valueList[1], valueList[2])
+                # else:
+                #     om.MGlobal_displayError('QBJ_Tip : Please select relevant controller !!!')
             else:
                 om.MGlobal_displayError('QBJ_Tip : Please select one controller !!!')
 
@@ -399,47 +401,33 @@ class CorrectiveBsTool(object):
         cmds.setAttr('{}.v'.format(baseGeo),1)
 
 
-    def enterSculptMode(self,baseGeo,bsNode,pose,targetOri_Geo,mirror,poseGrp):
-        sculptGeo = '{}_{}_sculpt'.format(baseGeo, pose)
-        target_Geo = '{}_{}'.format(baseGeo, pose)
-
-        # 检查场景中是否在target_Geo，没有就创建，并放置于bsTarget_Grp中
-        self.create_targetGeo(baseGeo, pose, targetOri_Geo, mirror)
-        # 创建修型所需的临时雕刻模型组
-        self.create_tempSculptGrp( baseGeo, pose,targetOri_Geo, target_Geo)
-        # 将生成的 targetGeo 加入 blendShape Node,同时用poseGrp上的属性驱动加入的target
-        self.add_Target_To_BsNode(baseGeo, pose, targetOri_Geo, mirror, bsNode, poseGrp)
-        # 获取baseGeo,并将其设置为参考模式
-        self.set_refVis(baseGeo)
-        # 设置baseGe,sculptGeo显示动画
-        self.set_GeoVisAnimation(baseGeo, sculptGeo)
-
-
-    def create_targetGeo(self,baseGeo,pose,targetOri_Geo,mirror):
+    def create_targetGeo(self,baseGeo,pose,targetOri_Geo,targetGeo):
         '''
-        检查场景中是否在target_Geo 和 R_target_Geo，没有就创建，并放置于bsTarget_Grp中
+        检查场景中是否在targetGeo 和 R_targetGeo，没有就创建，并放置于bsTarget_Grp中
         '''
-        target_Geo = '{}_{}'.format(baseGeo, pose)
-        R_target_Geo = '{}_{}'.format(baseGeo, pose.replace('L_', 'R_'))
         bsTarget_Grp = '{}_bsTarget_Grp'.format(baseGeo)
-        targetGeoList = []
 
         # 检查场景中是否有 bsTarget_Grp ，没有就报错并返回
         if not cmds.objExists(bsTarget_Grp):
             om.MGlobal_displayError('QBJ_Tip : Can not find {} !!!'.format(bsTarget_Grp))
             return None
+        # 检查场景中是否存在 targetGeo 和 R_targetGeo,没有就创建
+        if not cmds.objExists(targetGeo):
+            targetGeo = cmds.duplicate(targetOri_Geo, name = targetGeo)
 
-        # 检查场景中是否存在 target_Geo 和 R_target_Geo,没有就创建
-        if not cmds.objExists(target_Geo):
-            target_Geo = cmds.duplicate(targetOri_Geo, name='{}_{}'.format(baseGeo, pose))[0]
-            targetGeoList.append(target_Geo)
 
-        if not cmds.objExists(R_target_Geo):
-            if mirror:
-                R_target_Geo = cmds.duplicate(targetOri_Geo, name='{}_{}'.format(baseGeo, pose.replace('L_', 'R_')))[0]
-                targetGeoList.append(R_target_Geo)
-        print targetGeoList
-        return targetGeoList
+    def connect_poseGrp_to_target(self, baseGeo, pose, bsNode, poseGrp, target):
+
+        # 创建一个animUU 节点
+        animCurveUU_node = cmds.createNode('animCurveUU', name='{}_{}_{}'.format(baseGeo, pose, bsNode))
+
+        # 将 animUU上的 input 和 output 属性分别连接给poseGrp 和 blendShape上的target
+        cmds.connectAttr('{}.{}'.format(poseGrp, pose), '{}.input'.format(animCurveUU_node))
+        cmds.connectAttr('{}.output'.format(animCurveUU_node), '{}.{}'.format(bsNode, target))
+
+        # 设置 animCurveUU_node上的属性，将
+        cmds.setKeyframe(animCurveUU_node, float=0, value=0, itt='flat', ott='flat')
+        cmds.setKeyframe(animCurveUU_node, float=1, value=1, itt='flat', ott='flat')
 
 
     def exist_Target(self, bsNode, target):
@@ -462,43 +450,26 @@ class CorrectiveBsTool(object):
             return None
 
 
-    def connect_poseGrp_to_target(self, baseGeo, pose, bsNode, poseGrp, target):
-
-        # 创建一个animUU 节点
-        animCurveUU_node = cmds.createNode('animCurveUU', name='{}_{}_{}'.format(baseGeo, pose, bsNode))
-
-        # 将 animUU上的 input 和 output 属性分别连接给poseGrp 和 blendShape上的target
-        cmds.connectAttr('{}.{}'.format(poseGrp, pose), '{}.input'.format(animCurveUU_node))
-        cmds.connectAttr('{}.output'.format(animCurveUU_node), '{}.{}'.format(bsNode, target))
-
-        # 设置 animCurveUU_node上的属性，将
-        cmds.setKeyframe(animCurveUU_node, float=0, value=0, itt='flat', ott='flat')
-        cmds.setKeyframe(animCurveUU_node, float=1, value=1, itt='flat', ott='flat')
-
-
-    def add_Target_To_BsNode(self, baseGeo, pose, targetOri_Geo, mirror, bsNode,poseGrp):
-
-        targetGeoList = []
+    def add_Target_To_BsNode(self, baseGeo, pose, bsNode, poseGrp, targetGeo):
+        target = targetGeo
         # 如果存在 新增的修型目标体，就把他添加进 blendShape 中
-        if targetGeoList:
-            if cmds.aliasAttr(bsNode, q=True):
-                index = len(cmds.aliasAttr(bsNode, q=True))
-            else:
-                index = 0
-            for target in targetGeoList:
-                if not self.exist_Target(bsNode, target):
-                    cmds.select(target,r=True)
-                    cmds.blendShape(bsNode, edit=True, t=(baseGeo, index, target, 1.0))
-                    self.connect_poseGrp_to_target(baseGeo,pose,bsNode,poseGrp,target)
-                    index += 1
-                    cmds.select(cl=True)
+        if cmds.aliasAttr(bsNode, q=True):
+            index = len(cmds.aliasAttr(bsNode, q=True))
+        else:
+            index = 0
+        if not self.exist_Target(bsNode, target):
+            cmds.select(targetGeo,r=True)
+            cmds.blendShape(bsNode, edit=True, t=(baseGeo, index, target, 1.0))
+            self.connect_poseGrp_to_target(baseGeo,pose,bsNode,poseGrp,target)
+            index += 1
+            cmds.select(cl=True)
 
 
-    def create_tempSculptGrp(self, baseGeo, pose,targetOri_Geo, target_Geo):
+    def create_tempSculptGrp(self, baseGeo, pose,targetOri_Geo, targetGeo):
         '''
         :param baseGeo: the baseGeo has skinCluster  ---str---
         :param pose:  current select pose name  ---str---
-        :param target_Geo:
+        :param targetGeo:
         :return:
         '''
         tempSculptGrp = '{}_tempSculptGrp'.format(pose)
@@ -517,10 +488,10 @@ class CorrectiveBsTool(object):
             # 创建tempSculptGrp
             tempSculptGrp = cmds.group(name='{}_tempSculptGrp'.format(pose), world=True, empty=True)
         # 将sculptGeo，inverted_Geo，inverted_neg_Geo放在tempSculptGrp组内
-        cmds.parent(sculptGeo, inverted_Geo, tempSculptGrp)
+        cmds.parent(sculptGeo, inverted_Geo,inverted_neg_Geo, tempSculptGrp)
 
-        # 将 inverted_Geo 和 inverted_neg_Geo 与 target_Geo 进行融合变形
-        temp_bsNode = cmds.blendShape(inverted_Geo,target_Geo,name='temp_{}_bs'.format(target_Geo))
+        # 将 inverted_Geo 和 inverted_neg_Geo 与 targetGeo 进行融合变形
+        temp_bsNode = cmds.blendShape(inverted_Geo,targetGeo,name='temp_{}_bs'.format(targetGeo))
         cmds.blendShape(temp_bsNode,edit=True,w=[(0, 1.0), (1, -1.0)])
 
         # 取消选择的物体
@@ -561,33 +532,97 @@ class CorrectiveBsTool(object):
             cmds.sets('{}Shape'.format(sculptGeo),forceElement=rigSculpt_skinSG,edit=True)
             cmds.select(cl=True)
 
-    # def check_exists_bsTargetInfo(self,baseGeo,pose):
-    #     if baseGeo:
-    #      bsTargetGrp = '{}_bsTarget_Grp'.format(baseGeo)
-    #      if bsTargetGrp:
-    #          if not pose.startswith('-'):
-    #             bsTargetInfo = cmds.getAttr('{}.{}'.format(bsTargetGrp, pose))
-    #             if bsTargetInfo:
-    #                 bsTargetList = bsTargetInfo.split(';')
-    #                 return bsTargetList
-    #             else:
-    #                 return None
 
+    def enterSculptMode(self, baseGeo, bsNode, pose, targetOri_Geo, mirror, poseGrp):
+        sculptGeo = '{}_{}_sculpt'.format(baseGeo, pose)
+        targetGeo = '{}_{}'.format(baseGeo, pose)
 
-    def set_bsTargetInfo(self,baseGeo,pose,target):
-        bsTargetGrp = '{}_bsTarget_Grp'.format(baseGeo)
-        if cmds.objExists(bsTargetGrp):
-            attrStr = cmds.getAttr('{}.{}'.format(bsTargetGrp,pose))
-            attrList = [s for s in attrStr.split(';') if s != '']
-            if target not in attrList:
-                newAttrStr = ';'.join(attrList) + ';' + target + ';'
-                cmds.setAttr('{}.{}'.format(bsTargetGrp,pose),newAttrStr,type='string')
+        targetGeo_R = '{}_{}'.format(baseGeo, pose.replace('_L_', '_R_'))
+        poseGrp_R = poseGrp.replace('_L_', '_R_')
+        pose_R = pose.replace('_L_', '_R_')
+        # 检查场景中是否在targetGeo，没有就创建，并放置于bsTarget_Grp中
+        self.create_targetGeo(baseGeo, pose, targetOri_Geo, targetGeo)
+        if mirror:
+            self.create_targetGeo(baseGeo, pose, targetOri_Geo, targetGeo_R)
+        # 创建修型所需的临时雕刻模型组
+        self.create_tempSculptGrp(baseGeo, pose, targetOri_Geo, targetGeo)
+        # 将生成的 targetGeo 加入 blendShape Node,同时用poseGrp上的属性驱动加入的target
+        self.add_Target_To_BsNode(baseGeo, pose, bsNode, poseGrp, targetGeo)
+        if mirror:
+            self.add_Target_To_BsNode(baseGeo, pose_R, bsNode, poseGrp_R, targetGeo_R)
+        # 获取baseGeo,并将其设置为参考模式
+        self.set_refVis(baseGeo)
+        # 设置baseGe,sculptGeo显示动画
+        self.set_GeoVisAnimation(baseGeo, sculptGeo)
 
 
     def del_tempSculptGrp(self,pose):
         tempSculptGrp = '{}_tempSculptGrp'.format(pose)
         if cmds.objExists(tempSculptGrp):
             cmds.delete(tempSculptGrp)
+
+
+    def del_targetGeoHistory(self,targetGeo):
+        try:
+            cmds.delete(targetGeo,constructionHistory=True)
+        except :
+            om.MGlobal_displayError('QBJ_Tip : Unable to delete history on {}'.format(targetGeo))
+
+
+    def mirror_targetGeo(self,targetGeo,targetOri_Geo):
+
+        targetGeo_R = '{}'.format(targetGeo.replace('L_','R_'))
+        target_Grp = 'tempTarget_Grp'
+
+        # 检查场景中是否存在target_Grp
+        if not cmds.objExists(target_Grp):
+            target_Grp = cmds.group(name='tempTarget_Grp', empty=True, world=True)
+
+        # 复制targetGeo
+        target_copybase = cmds.duplicate(targetGeo, name='{}_copybase'.format(targetGeo), returnRootsOnly=True)[0]
+        # 将ori模型复制出两个，将变形过的物体对copybase进行blendshape，并将weight设置为0
+        copybase = cmds.duplicate(targetOri_Geo, name='{}_copybase'.format(targetOri_Geo), returnRootsOnly=True)
+        copybase1 = cmds.duplicate(targetOri_Geo, name='{}_copybase1'.format(targetOri_Geo), returnRootsOnly=True)
+        # 将复制出来的模型加入target_Grp组内
+        cmds.parent(target_copybase, copybase, copybase1, target_Grp)
+
+        # 将变形过的物体对copybase进行blendshape，并将weight设置为0
+        mirrorBs = cmds.blendShape(target_copybase, copybase, name='for_mirror_Bs', weight=(0, 0))
+        cmds.setAttr("{}.scaleX".format(copybase[0]), -1)
+
+        # 选中复制出来的两个ori模型，执行wrap
+        cmds.select(copybase1, r=True)
+        cmds.select(copybase, add=True)
+        pm.mel.eval('CreateWrap;')
+
+        # 将 mirrorBs上的 target_copybase属性 改为 1
+        cmds.setAttr("{}.{}".format(mirrorBs[0], target_copybase), 1)
+        mirrorTarget = cmds.duplicate(copybase1, name='mirror_{}'.format(targetOri_Geo), returnRootsOnly=True)
+        cmds.setAttr('{}.{}'.format(mirrorTarget[0], 'v'), 1)
+
+        # 将 mirrorTarget 对 targetGeo_R 进行融合变形后，删除历史
+        if cmds.objExists(targetGeo_R):
+            cmds.blendShape(mirrorTarget,targetGeo_R , weight=(0, 1))
+            cmds.delete(targetGeo_R,constructionHistory=True)
+
+        # 删除复制出来的模型
+        cmds.delete(target_Grp)
+
+
+    def exitSculptMode(self,baseGeo,targetOri_Geo,sculptGeo,pose,mirror):
+        targetGeo = '{}_{}'.format(baseGeo, pose)
+
+        # 删除 targetGeo 上的历史
+        self.del_targetGeoHistory(targetGeo)
+        if mirror:
+            self.mirror_targetGeo(targetGeo,targetOri_Geo)
+
+        # 删除 baseGe,sculptGeo显示动画
+        self.del_GeoVisAnimation(baseGeo, sculptGeo)
+        # 获取baseGeo，并将其设置为正常模式
+        self.set_normalVis(baseGeo)
+        # 删除 tempSculptGrp
+        self.del_tempSculptGrp(pose)
 
 
     def bsTarget_input_dialog(self):
@@ -600,3 +635,27 @@ class CorrectiveBsTool(object):
 
 
         cmds.showWindow(main_Win)
+
+
+
+
+    # def check_exists_bsTargetInfo(self,baseGeo,pose):
+    #     if baseGeo:
+    #      bsTargetGrp = '{}_bsTarget_Grp'.format(baseGeo)
+    #      if bsTargetGrp:
+    #          if not pose.startswith('-'):
+    #             bsTargetInfo = cmds.getAttr('{}.{}'.format(bsTargetGrp, pose))
+    #             if bsTargetInfo:
+    #                 bsTargetList = bsTargetInfo.split(';')
+    #                 return bsTargetList
+    #             else:
+    #                 return None
+
+    # def set_bsTargetInfo(self,baseGeo,pose,target):
+    #     bsTargetGrp = '{}_bsTarget_Grp'.format(baseGeo)
+    #     if cmds.objExists(bsTargetGrp):
+    #         attrStr = cmds.getAttr('{}.{}'.format(bsTargetGrp,pose))
+    #         attrList = [s for s in attrStr.split(';') if s != '']
+    #         if target not in attrList:
+    #             newAttrStr = ';'.join(attrList) + ';' + target + ';'
+    #             cmds.setAttr('{}.{}'.format(bsTargetGrp,pose),newAttrStr,type='string')
