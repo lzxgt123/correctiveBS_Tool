@@ -495,7 +495,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
                                                                                  self.arm_mirror_CB))
         self.arm_addPose.triggered.connect(lambda : self.click_addPose(self.arm_ListWidget_01))
         self.arm_removePose.triggered.connect(lambda : self.click_removePose(self.arm_ListWidget_01))
-        self.arm_resetPose.triggered.connect(lambda : self.click_resetPose(self.arm_ListWidget_01))
+        self.arm_resetPose.triggered.connect(lambda : self.click_resetPose(self.arm_ListWidget_01,self.arm_mirror_CB))
 
         # self.leg_CreateBtn.clicked.connect(self.click_legCreate_Btn)
         self.leg_ListWidget_01.itemClicked.connect(self.click_legListWidget01_item)
@@ -506,7 +506,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
                                                                                self.leg_mirror_CB))
         self.leg_addPose.triggered.connect(lambda : self.click_addPose(self.leg_ListWidget_01))
         self.leg_removePose.triggered.connect(lambda: self.click_removePose(self.leg_ListWidget_01))
-        self.leg_resetPose.triggered.connect(lambda: self.click_resetPose(self.leg_ListWidget_01))
+        self.leg_resetPose.triggered.connect(lambda: self.click_resetPose(self.leg_ListWidget_01,self.arm_mirror_CB))
 
         # self.finger_CreateBtn.clicked.connect(self.click_fingerCreate_Btn)
         self.finger_ListWidget_01.clicked.connect(self.click_fingerListWidget01_item)
@@ -516,7 +516,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.finger_updateDriver.triggered.connect(self.click_updateFingerDriver)
         self.finger_addPose.triggered.connect(self.click_fingerAddPose)
         self.finger_removePose.triggered.connect(lambda: self.click_removePose(self.finger_ListWidget_01))
-        self.finger_resetPose.triggered.connect(lambda: self.click_resetPose(self.finger_ListWidget_01))
+        self.finger_resetPose.triggered.connect(lambda: self.click_resetPose(self.finger_ListWidget_01,self.finger_mirror_CB))
 
         # self.torso_CreateBtn.clicked.connect(self.click_torsoCreate_Btn)
         self.torso_ListWidget_01.clicked.connect(self.click_torsoListWidget01_item)
@@ -527,7 +527,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
                                                                                    self.torso_mirror_CB))
         self.torso_addPose.triggered.connect(lambda : self.click_addPose(self.torso_ListWidget_01))
         self.torso_removePose.triggered.connect(lambda: self.click_removePose(self.torso_ListWidget_01))
-        self.torso_resetPose.triggered.connect(lambda: self.click_resetPose(self.torso_ListWidget_01))
+        self.torso_resetPose.triggered.connect(lambda: self.click_resetPose(self.torso_ListWidget_01,self.torso_mirror_CB))
 
         self.tabWidget.currentChanged.connect(self.tabWidget_changeEvent)
 
@@ -644,8 +644,15 @@ class CorrectiveBsUI(QtWidgets.QDialog):
                 self.click_delAnimation(ListWidget_01)
                 # 将 sculpt_Btn及其余的item设置为可选状态
                 self.unlock_allItem(ListWidget_01, sculpt_Btn)
+
+
+                # 弹出进度条
+                tool.exitProgressUI()
                 # 退出 雕刻模式
                 tool.exitSculptMode(baseGeo,targetOri_Geo,sculptGeo,pose,mirror)
+                # 删除进度条，并打印 修行完成
+                tool.delete_exitProgressUI()
+                om.MGlobal_displayInfo('QBJ_Tip : Corrective Completed !')
 
 
     def create_blendShape(self):
@@ -886,50 +893,57 @@ class CorrectiveBsUI(QtWidgets.QDialog):
 
 
     def click_updateDriver(self, ListWidget_01,mirror_cb):
+        # 如果未获取到当前的pose,就返回
+        if not ListWidget_01.currentItem():
+            return
+
         mirror = mirror_cb.isChecked()
         pose = ListWidget_01.currentItem().text()
         fkCtrl = 'FK' + pose.split('_')[0] + '_' + pose.split('_')[1]
         pose_R = pose.replace('_L_', '_R_')
         fkCtrl_R = fkCtrl.replace('_L', '_R')
-        axisList = ['rx', 'ry', 'rz']
-        valueList = [cmds.getAttr('{}.{}'.format(fkCtrl, axis)) for axis in ['rx', 'ry', 'rz']]
+
+        # 获取此时fkCtrl上的旋转数值
+        valueList = []
+        if cmds.objExists(fkCtrl):
+            valueList = [cmds.getAttr('{}.{}'.format(fkCtrl, axis)) for axis in ['rx', 'ry', 'rz']]
 
         if not pose.startswith('-'):
-            tool.update_poseHide_Info(pose)
-            tool.update_PoseLocPosition(pose)
+            tool.update_poseHide_Info(pose,valueList)
+            tool.update_PoseLocPosition(fkCtrl,pose,valueList)
             tool.update_animNode(pose)
             om.MGlobal_displayInfo('QBJ_Tip : Update Driver successfully !')
 
             if mirror:
-                # 是否采用存储数值的方式进行设置？？？？
-                for i in range(len(axisList)):
-                    cmds.setAttr('{},{}'.format(fkCtrl_R,axisList[i]),valueList[i])
-
-                tool.update_poseHide_Info(pose_R)
-                tool.update_PoseLocPosition(pose_R)
+                tool.update_poseHide_Info(pose_R,valueList)
+                tool.update_PoseLocPosition(fkCtrl_R,pose_R,valueList)
                 tool.update_animNode(pose_R)
-
-                for i in range(len(axisList)):
-                    cmds.setAttr('{},{}'.format(fkCtrl_R,axisList[i]),0)
                 om.MGlobal_displayInfo('QBJ_Tip : Update Driver successfully !')
 
 
 
     def click_updateFingerDriver(self):
+        # 如果未获取到当前的pose,就返回
+        if not self.finger_ListWidget_01.currentItem():
+            return
+
         mirror = self.finger_mirror_CB.isChecked()
+        pose = self.finger_ListWidget_01.currentItem().text()
+        fkCtrl = 'FK' + pose.split('_')[0] + '_' + pose.split('_')[1]
+        poseGrp_Hide = 'Finger_L_poseGrp_Hide'
 
+        pose_R = pose.replace('_L_', '_R_')
+        fkCtrl_R = fkCtrl.replace('_L', '_R')
+        poseGrp_Hide_R = 'Finger_R_poseGrp_Hide'
 
-        if self.finger_ListWidget_01.currentItem():
-            pose = self.finger_ListWidget_01.currentItem().text()
-            tool.update_fingerPoseHide_Info(pose)
-            tool.update_fingerAnimNode(pose)
+        if not pose.startswith('-'):
+            tool.update_fingerPoseHide_Info(pose,fkCtrl,poseGrp_Hide)
+            tool.update_fingerAnimNode(pose,poseGrp_Hide)
             om.MGlobal_displayInfo('QBJ_Tip : Update Driver successfully !')
             if mirror:
-                pose_R = pose.replace('_L_', '_R_')
-                tool.update_fingerPoseHide_Info(pose_R)
-                tool.update_fingerAnimNode(pose_R)
+                tool.update_fingerPoseHide_Info(pose_R,fkCtrl_R,poseGrp_Hide_R)
+                tool.update_fingerAnimNode(pose_R,poseGrp_Hide_R)
                 om.MGlobal_displayInfo('QBJ_Tip : Update Driver successfully !')
-
 
 
     def click_addPose(self,ListWidget_01):
@@ -946,8 +960,30 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         print 'click_removePose'
 
 
-    def click_resetPose(self,ListWidget_01):
-        print 'click_resetPose'
+    def click_resetPose(self,ListWidget_01,mirror_cb):
+        # 如果未获取到当前的pose,就返回
+        if not ListWidget_01.currentItem():
+            return
+
+        mirror = mirror_cb.isChecked()
+        baseGeo = self.baseGeo_LineEdit.text()
+        pose = ListWidget_01.currentItem().text()
+        targetOri_Geo = self.targetGeo_LineEdit.text()
+        targetGeo = '{}_{}'.format(baseGeo, pose)
+        targetGeo_R = targetGeo.replace('_L_', '_R_')
+
+        if baseGeo == '':
+            om.MGlobal_displayError('QBJ_Tip : Please load Base Geo firstly !!!')
+            return
+        if targetOri_Geo == '':
+            om.MGlobal_displayError("QBJ_Tip : Please load Target Geo firstly !!! ")
+            return
+
+        # 将targetGeo恢复成默认造型
+        tool.resetTargetGeo(targetOri_Geo,targetGeo)
+        if mirror:
+            tool.resetTargetGeo(targetOri_Geo, targetGeo_R)
+        om.MGlobal_displayInfo('QBJ_Tip : Reset Pose Successfully !')
 
 
     def loadFingerDriverInfo(self):

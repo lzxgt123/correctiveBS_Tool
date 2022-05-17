@@ -272,43 +272,38 @@ class CorrectiveBsTool(object):
                 cmds.connectAttr('{}.ry'.format(fingerJoint),'{}.input'.format(node))
 
 
-    def update_PoseLocPosition(self,pose):
+    def update_PoseLocPosition(self,fkCtrl,pose,valueList):
+        # 根据命名获取到对应的poseLoc和poseReaderLoc,
+        attrList = ['tx','ty','tz']
+        rotateAxis = ['rx','ry','rz']
+        currentPoseLoc = pose + '_loc'
+        currentPoseReaderLoc = pose.split('_')[0] + '_' + pose.split('_')[
+            1] + '_poseReader_loc'
 
-        if not pose.startswith('-'):
-            # 根据命名获取到对应的poseLoc和poseReaderLoc,重新放置poseLoc位置
-            currectPoseLoc = pose + '_loc'
-            currectPoseReaderLoc = pose.split('_')[0] + '_' + pose.split('_')[
-                1] + '_poseReader_loc'
+        # 设置fkCtrl,将PoseLoc定位到currentPoseReaderLoc的位置
+        for i in range(len(attrList)):
+            cmds.setAttr('{}.{}'.format(currentPoseLoc,attrList[i]),lock=False)
+            cmds.setAttr('{}.{}'.format(fkCtrl,rotateAxis[i]),valueList[i])
 
-            # 将PoseLoc定位到新的位置
-            for axis in ['tx','ty','tz']:
-                cmds.setAttr('{}.{}'.format(currectPoseLoc,axis),lock=False)
+        locParentConstraint = cmds.parentConstraint(currentPoseReaderLoc,currentPoseLoc,maintainOffset=False)
+        cmds.delete(locParentConstraint)
 
-            locParentConstraint = cmds.parentConstraint(currectPoseReaderLoc,currectPoseLoc,maintainOffset=False)
-            cmds.delete(locParentConstraint)
-
-            for axis in ['tx', 'ty', 'tz']:
-                cmds.setAttr('{}.{}'.format(currectPoseLoc, axis), lock=True)
+        # 将 currentPoseLoc 锁定,并将fkCtrl旋转数值清零
+        for i in range(len(attrList)):
+            cmds.setAttr('{}.{}'.format(currentPoseLoc, attrList[i]), lock=True)
+            cmds.setAttr('{}.{}'.format(fkCtrl, rotateAxis[i]), 0)
 
 
-    def update_poseHide_Info(self,pose):
-        # 获取当前选择到的控制器
-        # selectCtrl = cmds.ls(sl=True, type='transform')
-        if not pose.startswith('-'):
-            fkCtrl = 'FK' + pose.split('_')[0]+'_'+pose.split('_')[1]
-            poseGrp_Hide = pose.split('_')[0]+'_'+pose.split('_')[1] + '_poseGrp_Hide'
-            attr = pose.split('_')[-1]
+    def update_poseHide_Info(self,pose,valueList):
 
-            # 如果所选的控制器是正确的控制器，则获取此时控制器上的rotate数值，并将数值重新设置给对应的属性
-            if fkCtrl:
-                # if selectCtrl[0] == fkCtrl:
-                valueList = [cmds.getAttr('{}.{}'.format(fkCtrl,axis)) for axis in ['rx','ry','rz']]
+        poseGrp_Hide = pose.split('_')[0]+'_'+pose.split('_')[1] + '_poseGrp_Hide'
+        attr = pose.split('_')[-1]
 
-                cmds.setAttr('{}.{}'.format(poseGrp_Hide,attr),valueList[0],valueList[1],valueList[2])
-                # else:
-                #     om.MGlobal_displayError('QBJ_Tip : Please select relevant controller !!!')
-            else:
-                om.MGlobal_displayError('QBJ_Tip : Please select one controller !!!')
+        # 如果所选的控制器是正确的控制器，则获取此时控制器上的rotate数值，并将数值重新设置给对应的属性
+        if cmds.objExists(poseGrp_Hide):
+            cmds.setAttr('{}.{}'.format(poseGrp_Hide,attr),valueList[0],valueList[1],valueList[2])
+        else:
+            om.MGlobal_displayError('QBJ_Tip : Can not find {} !!!'.format(poseGrp_Hide))
 
 
     def update_animNode(self,pose):
@@ -319,6 +314,7 @@ class CorrectiveBsTool(object):
         valueList =  cmds.getAttr('{}.{}'.format(poseGrp_Hide,direction))
         valueIndex = self.angleReadableDict[direction]
         floatValue = valueList[0][valueIndex]
+
         if floatValue < 0:
             floatValue *= -1
             cmds.keyframe(current_animNode, index=(1,1),floatChange= floatValue,option='over', absolute=True)
@@ -326,32 +322,20 @@ class CorrectiveBsTool(object):
             cmds.keyframe(current_animNode, index=(1, 1), floatChange=floatValue, option='over', absolute=True)
 
 
-    def update_fingerPoseHide_Info(self,pose):
-        # # 获取当前选择到的控制器
-        # selectCtrl = cmds.ls(sl=True, type='transform')
-
-        if not pose.startswith('-'):
-            fkCtrl = 'FK' + pose.split('_')[0] + '_' + pose.split('_')[1]
-            poseGrp_Hide = 'Finger_L_poseGrp_Hide'
-            # 如果所选的控制器是正确的控制器，则获取此时控制器上的rotate数值，并将数值重新设置给对应的属性
-            if fkCtrl:
-                # if selectCtrl[0] == fkCtrl:
-                valueList = [cmds.getAttr('{}.{}'.format(fkCtrl, axis)) for axis in ['rx', 'ry', 'rz']]
-                cmds.setAttr('{}.{}'.format(poseGrp_Hide, pose), valueList[0], valueList[1], valueList[2])
-                # else:
-                #     om.MGlobal_displayError('QBJ_Tip : Please select relevant controller !!!')
-            else:
-                om.MGlobal_displayError('QBJ_Tip : Please select one controller !!!')
+    def update_fingerPoseHide_Info(self,pose,fkCtrl,poseGrp_Hide):
+        axisList = ['rx','ry','rz']
+        # 如果所选的控制器是正确的控制器，则获取此时控制器上的rotate数值，并将数值重新设置给对应的属性
+        if cmds.objExists(fkCtrl):
+            valueList = [cmds.getAttr('{}.{}'.format(fkCtrl, axis)) for axis in ['rx', 'ry', 'rz']]
+            cmds.setAttr('{}.{}'.format(poseGrp_Hide, pose), valueList[0], valueList[1], valueList[2])
 
 
-    def update_fingerAnimNode(self,pose):
-
-        poseGrp_Hide = 'Finger_L_poseGrp_Hide'
+    def update_fingerAnimNode(self,pose,poseGrp_Hide):
         current_animNode = pose+'_animUU'
         direction = pose.split('_')[-1]
         valueList =  cmds.getAttr('{}.{}'.format(poseGrp_Hide,pose))
         valueIndex = self.angleReadableDict[direction]
-        cmds.keyframe(current_animNode, index=(0,0),floatChange= valueList[0][valueIndex],option='over', absolute=True)
+        cmds.keyframe(current_animNode, index=(1,1),floatChange= valueList[0][valueIndex],option='over', absolute=True)
 
 
     def set_refVis(self,geo):
@@ -555,6 +539,8 @@ class CorrectiveBsTool(object):
         # 设置baseGe,sculptGeo显示动画
         self.set_GeoVisAnimation(baseGeo, sculptGeo)
 
+        om.MGlobal_displayInfo('QBJ_Tip : Enter Sculpt Mode !')
+
 
     def del_tempSculptGrp(self,pose):
         tempSculptGrp = '{}_tempSculptGrp'.format(pose)
@@ -614,8 +600,11 @@ class CorrectiveBsTool(object):
 
         # 删除 targetGeo 上的历史
         self.del_targetGeoHistory(targetGeo)
+        cmds.progressBar(self.mirrorTarget_progress,edit=True, step=3)
+
         if mirror:
             self.mirror_targetGeo(targetGeo,targetOri_Geo)
+        cmds.progressBar(self.mirrorTarget_progress, edit=True, step=1)
 
         # 删除 baseGe,sculptGeo显示动画
         self.del_GeoVisAnimation(baseGeo, sculptGeo)
@@ -623,6 +612,20 @@ class CorrectiveBsTool(object):
         self.set_normalVis(baseGeo)
         # 删除 tempSculptGrp
         self.del_tempSculptGrp(pose)
+        cmds.progressBar(self.mirrorTarget_progress, edit=True, step=1)
+
+
+    def resetTargetGeo(self,targetOri_Geo,targetGeo):
+        if  not cmds.objExists(targetOri_Geo):
+            om.MGlobal_displayError('QBJ_Tip : Can not find {} !!!'.format(targetOri_Geo))
+            return
+
+        if not cmds.objExists(targetGeo):
+            om.MGlobal_displayError('QBJ_Tip : Can not find {} !!!'.format(targetGeo))
+            return
+
+        resetBS = cmds.blendShape(targetOri_Geo,targetGeo,w=[0,1.0],name='reset_bs')
+        cmds.delete(targetGeo,constructionHistory=True)
 
 
     def bsTarget_input_dialog(self):
@@ -637,9 +640,29 @@ class CorrectiveBsTool(object):
         cmds.showWindow(main_Win)
 
 
+    def exitProgressUI(self,WINDOW_NAME = 'progressBar_UI'):
+        u'''
+        创建进度条 Gui
+        '''
+        WINDOW_WIDTH = 250
+        WINDOW_HEIGHT = 50
+        self.delete_exitProgressUI()
+        progressWin = cmds.window(WINDOW_NAME, title = 'Correcting... ',
+                             width = WINDOW_WIDTH,
+                             height = WINDOW_HEIGHT,
+                             sizeable = False)
+        cmds.columnLayout()
+        self.mirrorTarget_progress = cmds.progressBar(width=WINDOW_WIDTH,maxValue=5)
+
+        cmds.showWindow(WINDOW_NAME)
 
 
-    # def check_exists_bsTargetInfo(self,baseGeo,pose):
+    def delete_exitProgressUI(self,WINDOW_NAME = 'progressBar_UI'):
+        if cmds.window(WINDOW_NAME, exists=True):
+            cmds.deleteUI(WINDOW_NAME)
+
+
+   # def check_exists_bsTargetInfo(self,baseGeo,pose):
     #     if baseGeo:
     #      bsTargetGrp = '{}_bsTarget_Grp'.format(baseGeo)
     #      if bsTargetGrp:
