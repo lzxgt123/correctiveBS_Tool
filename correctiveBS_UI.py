@@ -642,9 +642,6 @@ class CorrectiveBsUI(QtWidgets.QDialog):
 
                 # 删除控制器驱动动画
                 self.click_delAnimation(ListWidget_01)
-                # 将 sculpt_Btn及其余的item设置为可选状态
-                self.unlock_allItem(ListWidget_01, sculpt_Btn)
-
 
                 # 弹出进度条
                 tool.exitProgressUI()
@@ -652,6 +649,8 @@ class CorrectiveBsUI(QtWidgets.QDialog):
                 tool.exitSculptMode(baseGeo,targetOri_Geo,sculptGeo,pose,mirror)
                 # 删除进度条，并打印 修行完成
                 tool.delete_exitProgressUI()
+                # 将 sculpt_Btn及其余的item设置为可选状态
+                self.unlock_allItem(ListWidget_01, sculpt_Btn)
                 om.MGlobal_displayInfo('QBJ_Tip : Corrective Completed !')
 
 

@@ -449,7 +449,7 @@ class CorrectiveBsTool(object):
             cmds.select(cl=True)
 
 
-    def create_tempSculptGrp(self, baseGeo, pose,targetOri_Geo, targetGeo):
+    def create_tempSculptGrp(self, baseGeo, pose,targetOri_Geo, targetGeo,bsNode):
         '''
         :param baseGeo: the baseGeo has skinCluster  ---str---
         :param pose:  current select pose name  ---str---
@@ -462,10 +462,22 @@ class CorrectiveBsTool(object):
         sculptGeo = cmds.duplicate(baseGeo, name='{}_{}_sculpt'.format(baseGeo, pose))
         cmds.setAttr('{}.v'.format(sculptGeo[0]),1)
 
+        '''
+        --------------------------------------------------
+        创建 inverted_Geo前,baseGeo不能受除蒙皮以外的影响,
+        需要将blendShape的影响调为0，否则无法计算正确的造型
+        '''
+        cmds.setAttr('{}.envelope'.format(bsNode),0)
         # 创建 inverted_Geo，将显示设置为0
         inverted_Geo = cvshapeinverter.invert(baseGeo,sculptGeo[0],name='{}_{}_inverted'.format(baseGeo,pose))
-        cmds.setAttr('{}.v'.format(inverted_Geo),0)
-        inverted_neg_Geo = cmds.duplicate(targetOri_Geo, name='{}_neg'.format(inverted_Geo))
+        inverted_neg_Geo = cmds.duplicate(baseGeo, name='{}_neg'.format(inverted_Geo))
+        cmds.setAttr('{}.v'.format(inverted_Geo), 0)
+        cmds.setAttr('{}.v'.format(inverted_neg_Geo[0]), 0)
+        '''
+        将 blendShape 的影响调回 1
+        -------------------------------------------------
+        '''
+        cmds.setAttr('{}.envelope'.format(bsNode), 1)
 
         # 检查场景中是否存在 tempSculptGrp
         if not cmds.objExists(tempSculptGrp):
@@ -529,7 +541,7 @@ class CorrectiveBsTool(object):
         if mirror:
             self.create_targetGeo(baseGeo, pose, targetOri_Geo, targetGeo_R)
         # 创建修型所需的临时雕刻模型组
-        self.create_tempSculptGrp(baseGeo, pose, targetOri_Geo, targetGeo)
+        self.create_tempSculptGrp(baseGeo, pose, targetOri_Geo, targetGeo,bsNode)
         # 将生成的 targetGeo 加入 blendShape Node,同时用poseGrp上的属性驱动加入的target
         self.add_Target_To_BsNode(baseGeo, pose, bsNode, poseGrp, targetGeo)
         if mirror:
