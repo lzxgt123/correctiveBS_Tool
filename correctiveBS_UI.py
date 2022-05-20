@@ -642,7 +642,6 @@ class CorrectiveBsUI(QtWidgets.QDialog):
 
                 # 删除控制器驱动动画
                 self.click_delAnimation(ListWidget_01)
-
                 # 弹出进度条
                 tool.exitProgressUI()
                 # 退出 雕刻模式
@@ -660,7 +659,6 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         baseGeo = self.baseGeo_LineEdit.text()
         targetGeo = self.targetGeo_LineEdit.text()
         if baseGeo:
-
             targetGeo_bsNode_list = tool.add_blendShape(baseGeo,targetGeo,allPoseList)
             # 在targetGeoGrp组上添加bsTargetInfo
             self.targetGeo_LineEdit.setText(str(targetGeo_bsNode_list[0]))
@@ -758,7 +756,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
 
     def loadDriverInfo(self,ListWidget_01):
         pose = ListWidget_01.currentItem().text()
-        # 过滤以'-'开头的item
+        # 过滤以'_'开头的item
         if not pose.startswith('-'):
             poseGrp = pose.split('_')[0] + '_' + pose.split('_')[1] + '_poseGrp'
             # 将poseGrp上的数据显示在driver_LineEdit中
@@ -947,6 +945,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
 
     def click_addPose(self,ListWidget_01):
         index =  ListWidget_01.currentIndex().row()
+
         print 'click_addPose'
 
 

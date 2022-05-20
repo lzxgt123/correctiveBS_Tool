@@ -674,6 +674,21 @@ class CorrectiveBsTool(object):
             cmds.deleteUI(WINDOW_NAME)
 
 
+    def create_UIPoseGrp(self,PoseList):
+        allPoseRootGrp = 'allPoseRoot_Grp'
+        PoseListGrp = '{}_Grp'.format(PoseList)
+        if not cmds.objExists(allPoseRootGrp):
+            allPoseRootGrp = cmds.group(name=allPoseRootGrp, empty=True, world=True)
+
+        if cmds.objExists(PoseListGrp):
+            return
+
+        PoseListGrp = cmds.group(name=PoseListGrp ,empty=True,world=True,parent=allPoseRootGrp)
+        for pose in PoseList:
+            cmds.group(name=pose,empty=True,parent=PoseListGrp)
+
+
+
    # def check_exists_bsTargetInfo(self,baseGeo,pose):
     #     if baseGeo:
     #      bsTargetGrp = '{}_bsTarget_Grp'.format(baseGeo)
