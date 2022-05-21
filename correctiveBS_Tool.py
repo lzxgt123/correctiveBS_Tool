@@ -160,7 +160,7 @@ class CorrectiveBsTool(object):
 
         if bsTargetGrp:
             for pose in allPoseList:
-                if not pose.startswith('-'):
+                if not pose.startswith('__'):
                     if pose not in bsTargetGrp_attrs:
                         cmds.addAttr(bsTargetGrp,longName='%s'%pose,dataType='string',keyable=False)
                         # cmds.setAttr('{}.{}'.format(bsTargetGrp, pose), '{};'.format(pose), type='string')
@@ -297,7 +297,7 @@ class CorrectiveBsTool(object):
     def update_poseHide_Info(self,pose,valueList):
 
         poseGrp_Hide = pose.split('_')[0]+'_'+pose.split('_')[1] + '_poseGrp_Hide'
-        attr = pose.split('_')[-1]
+        attr = pose
 
         # 如果所选的控制器是正确的控制器，则获取此时控制器上的rotate数值，并将数值重新设置给对应的属性
         if cmds.objExists(poseGrp_Hide):
@@ -311,7 +311,7 @@ class CorrectiveBsTool(object):
         poseGrp_Hide = pose.split('_')[0] + '_' + pose.split('_')[1] + '_poseGrp_Hide'
         current_animNode = pose+'_animUU'
         direction = pose.split('_')[-1]
-        valueList =  cmds.getAttr('{}.{}'.format(poseGrp_Hide,direction))
+        valueList =  cmds.getAttr('{}.{}'.format(poseGrp_Hide,pose))
         valueIndex = self.angleReadableDict[direction]
         floatValue = valueList[0][valueIndex]
 
@@ -665,7 +665,6 @@ class CorrectiveBsTool(object):
                              sizeable = False)
         cmds.columnLayout()
         self.mirrorTarget_progress = cmds.progressBar(width=WINDOW_WIDTH,maxValue=5)
-
         cmds.showWindow(WINDOW_NAME)
 
 
@@ -674,26 +673,69 @@ class CorrectiveBsTool(object):
             cmds.deleteUI(WINDOW_NAME)
 
 
-    def create_UIPoseGrp(self,PoseList):
-        allPoseRootGrp = 'allPoseRoot_Grp'
-        PoseListGrp = '{}_Grp'.format(PoseList)
-        if not cmds.objExists(allPoseRootGrp):
-            allPoseRootGrp = cmds.group(name=allPoseRootGrp, empty=True, world=True)
-
-        if cmds.objExists(PoseListGrp):
+    def create_UIAllPoseGrp(self,PoseListName,PoseList):
+        allPoseRootGrp = 'UI_allPose_Grp'
+        PoseListGrp = '{}_Grp'.format(PoseListName)
+        allPoseGrp = 'QBJ_all_PoseGrp'
+        if not cmds.objExists(allPoseGrp):
             return
+        # 检查场景中是否存在allPoseRootGrp
+        if not cmds.objExists(allPoseRootGrp):
+            allPoseRootGrp = cmds.group(name=allPoseRootGrp, empty=True, parent=allPoseGrp)
 
-        PoseListGrp = cmds.group(name=PoseListGrp ,empty=True,world=True,parent=allPoseRootGrp)
-        for pose in PoseList:
-            cmds.group(name=pose,empty=True,parent=PoseListGrp)
+        # 检查场景中是否存在PoseListGrp
+        if not cmds.objExists(PoseListGrp):
+            PoseListGrp = cmds.group(name=PoseListGrp, empty=True, parent=allPoseRootGrp)
+            for pose in PoseList:
+                poseGrp = cmds.group(name=pose, empty=True)
+                cmds.parent(poseGrp, PoseListGrp)
+
+        cmds.select(cl=True)
+
+
+    def add_UIPoseGrp(self,index,pose,text):
+        if pm.objExists(pose):
+            if len(pm.ls(pose))==1:
+                PoseList_Grp = pm.PyNode(pose).getParent()
+                newPoseGrp = pm.group(name=text,empty=True,parent = str(PoseList_Grp))
+
+                pm.reorder(newPoseGrp,relative = index +2)
+            else:
+                om.MGlobal_displayError('QBJ_Tip : "{}" is not unique in the scene !!!'.format(pose))
+        else:
+            om.MGlobal_displayError('QBJ_Tip : "{}" is not in the scene !!!'.format(pose))
+
+
+    def add_pose_to_poseGrp(self,pose,values,text,poseGrp,hideGrp):
+
+        # 将用户输入的 targetName 写入对应poseGrp组内
+        cmds.addAttr(poseGrp ,longName = text ,attributeType='double')
+
+        # 将用户输入的 targetName 写入对应 hideGrp 组内
+        cmds.addAttr(hideGrp,longName=text,attributeType='double3',keyable=False,readable=True)
+        for num in range(3):
+            cmds.addAttr(hideGrp, longName='{}_0{}'.format(text,num),
+                         attributeType='double',
+                         parent='{}'.format(text),
+                         keyable=False)
+        cmds.setAttr('{}.{}'.format(hideGrp, text), values[0], values[1], values[2])
+
+
+    def create_poseAnimNode(self,pose,text,poseGrp):
+        poseAnimNode = '{}_animUU'.format(text)
+        if not cmds.objExists(poseAnimNode):
+            poseAnimNode = cmds.createNode('animCurveUU',name = '{}_animUU'.format(text))
+            cmds.connectAttr('{}_angle'.format(pose), '{}.input'.format(poseAnimNode))
+            cmds.connectAttr('{}.output'.format(poseAnimNode),'{}.{}'.format(poseGrp,text))
 
 
 
-   # def check_exists_bsTargetInfo(self,baseGeo,pose):
+
+    # def check_exists_bsTargetInfo(self,baseGeo,pose):
     #     if baseGeo:
     #      bsTargetGrp = '{}_bsTarget_Grp'.format(baseGeo)
     #      if bsTargetGrp:
-    #          if not pose.startswith('-'):
+    #          if not pose.startswith('__'):
     #             bsTargetInfo = cmds.getAttr('{}.{}'.format(bsTargetGrp, pose))
     #             if bsTargetInfo:
     #                 bsTargetList = bsTargetInfo.split(';')

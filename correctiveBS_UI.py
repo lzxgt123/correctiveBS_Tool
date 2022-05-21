@@ -39,44 +39,44 @@ class CorrectiveBsUI(QtWidgets.QDialog):
     limitAngleExpr = QtCore.QRegExp('^-?(180|([1-9]?\d|1[0-7][0-9])(\.\d{1,2})?)$')
 
 
-    armPoseList = [u'-----肩胛-----', 'Scapula_L_Up', 'Scapula_L_Down', 'Scapula_L_Front', 'Scapula_L_Back',
-                   u'-----上臂-----', 'Shoulder_L_Up', 'Shoulder_L_Down', 'Shoulder_L_Front', 'Shoulder_L_Back',
+    armPoseList = [u'__________Scapula__________', 'Scapula_L_Up', 'Scapula_L_Down', 'Scapula_L_Front', 'Scapula_L_Back',
+                   u'__________Shoulder__________', 'Shoulder_L_Up', 'Shoulder_L_Down', 'Shoulder_L_Front', 'Shoulder_L_Back',
                    'Shoulder_L_UpFront', 'Shoulder_L_UpBack', 'Shoulder_L_DownFront', 'Shoulder_L_DownBack',
-                   u'-----肘部-----', 'Elbow_L_Front',
-                   u'-----手腕-----','Wrist_L_Up', 'Wrist_L_Down', 'Wrist_L_Front',
+                   u'__________Elbow__________', 'Elbow_L_Front',
+                   u'__________Wrist__________','Wrist_L_Up', 'Wrist_L_Down', 'Wrist_L_Front',
                    'Wrist_L_Back', 'Wrist_L_UpFront','Wrist_L_UpBack', 'Wrist_L_DownFront', 'Wrist_L_DownBack'
                    ]
 
 
-    legPoseList = [u'-----腿部-----', 'Hip_L_Up', 'Hip_L_Down', 'Hip_L_Front', 'Hip_L_Back',
+    legPoseList = [u'__________Hip__________', 'Hip_L_Up', 'Hip_L_Down', 'Hip_L_Front', 'Hip_L_Back',
                    'Hip_L_UpFront', 'Hip_L_UpBack', 'Hip_L_DownFront', 'Hip_L_DownBack',
-                   u'-----膝盖-----', 'Knee_L_Back',
-                   u'-----脚踝-----', 'Ankle_L_Up', 'Ankle_L_Down', 'Ankle_L_Front', 'Ankle_L_Back', 'Ankle_L_UpFront',
+                   u'__________Knee__________', 'Knee_L_Back',
+                   u'__________Ankle__________', 'Ankle_L_Up', 'Ankle_L_Down', 'Ankle_L_Front', 'Ankle_L_Back', 'Ankle_L_UpFront',
                    'Ankle_L_UpBack', 'Ankle_L_DownFront', 'Ankle_L_DownBack'
                    ]
 
 
-    fingerPoseList = [u'-----食指-----',  'IndexFinger1_L_Up','IndexFinger1_L_Down',
+    fingerPoseList = [u'__________IndexFinger__________',  'IndexFinger1_L_Up','IndexFinger1_L_Down',
                       'IndexFinger2_L_Down', 'IndexFinger3_L_Down',
 
-                      u'-----中指-----',  'MiddleFinger1_L_Up','MiddleFinger1_L_Down',
+                      u'__________MiddleFinger__________',  'MiddleFinger1_L_Up','MiddleFinger1_L_Down',
                       'MiddleFinger2_L_Down', 'MiddleFinger3_L_Down',
 
-                      u'-----无名指-----',  'RingFinger1_L_Up','RingFinger1_L_Down',
+                      u'__________RingFinger__________',  'RingFinger1_L_Up','RingFinger1_L_Down',
                       'RingFinger2_L_Down', 'RingFinger3_L_Down',
 
-                      u'-----小拇指-----',  'PinkyFinger1_L_Up','PinkyFinger1_L_Down',
+                      u'__________PinkyFinger__________',  'PinkyFinger1_L_Up','PinkyFinger1_L_Down',
                       'PinkyFinger2_L_Down','PinkyFinger3_L_Down',
 
-                      u'-----大拇指-----',  'ThumbFinger1_L_Up','ThumbFinger1_L_Down',
+                      u'__________ThumbFinger__________',  'ThumbFinger1_L_Up','ThumbFinger1_L_Down',
                       'ThumbFinger2_L_Down', 'ThumbFinger3_L_Down'
                      ]
 
 
-    torsoPoseList = [u'-----头部-----', 'Head_M_Front', 'Head_M_Back', 'Head_M_Left', 'Head_M_Right',
-                     u'-----颈部-----', 'Neck_M_Front', 'Neck_M_Back', 'Neck_M_Left', 'Neck_M_Right',
-                     u'-----胸腔-----', 'Chest_M_Front', 'Chest_M_Back', 'Chest_M_Left', 'Chest_M_Right',
-                     u'-----躯干-----', 'Spine1_M_Front', 'Spine1_M_Back', 'Spine1_M_Left', 'Spine1_M_Right',
+    torsoPoseList = [u'__________Head__________', 'Head_M_Front', 'Head_M_Back', 'Head_M_Left', 'Head_M_Right',
+                     u'__________Neck__________', 'Neck_M_Front', 'Neck_M_Back', 'Neck_M_Left', 'Neck_M_Right',
+                     u'__________Chest__________', 'Chest_M_Front', 'Chest_M_Back', 'Chest_M_Left', 'Chest_M_Right',
+                     u'__________Spine__________', 'Spine1_M_Front', 'Spine1_M_Back', 'Spine1_M_Left', 'Spine1_M_Right',
                      'Spine2_M_Front', 'Spine2_M_Back', 'Spine2_M_Left', 'Spine2_M_Right'
                     ]
 
@@ -109,10 +109,20 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         poseGrpList = cmds.ls('*poseGrp')
         for i in range(ListWidget_01.count()):
             pose = ListWidget_01.item(i)
-            if not pose.text().startswith('-'):
+            if not pose.text().startswith('__'):
                 poseGrp = pose.text().split('_')[0] + '_' + pose.text().split('_')[1] + '_' + 'poseGrp'
                 if poseGrp not in poseGrpList:
                     pose.setFlags(pose.flags() & ~QtCore.Qt.ItemIsEnabled)
+
+
+    def create_uiPoseGrp(self):
+        allPoseDict = {'armPoseList':self.armPoseList,
+                       'legPoseList':self.legPoseList,
+                       'fingerPoseList':self.fingerPoseList,
+                       'torsoPoseList':self.torsoPoseList
+                        }
+        for PoseListName,PoseList in allPoseDict.items():
+            tool.create_UIAllPoseGrp(PoseListName,PoseList)
 
 
     def showUI(self):
@@ -125,6 +135,9 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.setWindowTitle(self.WINDOW_TITLE)
         self.setFixedSize(470, 740)
 
+        # 创建 UIPoseGrp
+        self.create_uiPoseGrp()
+        # 创建 GUI
         self.create_widgets()
         self.create_layouts()
         self.create_connections()
@@ -190,8 +203,10 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.arm_setAni = self.arm_contextMenu.addAction('Set Animation')
         self.arm_delAni = self.arm_contextMenu.addAction('Del Animation')
         # 将 pose添加进listWidget中
-        for item in self.armPoseList:
-            self.arm_ListWidget_01.addItem(item)
+        if cmds.objExists('armPoseList_Grp'):
+            for item in pm.PyNode('armPoseList_Grp').getChildren():
+                self.arm_ListWidget_01.addItem(str(item))
+
         # 将没有对应poseGrp的item设置为不可选状态
         self.check_ifnot_PoseGrp(self.arm_ListWidget_01)
         # 创建 arm_sculpt布局
@@ -217,8 +232,10 @@ class CorrectiveBsUI(QtWidgets.QDialog):
 
 
         # 将 pose添加进listWidget中
-        for item in self.legPoseList:
-            self.leg_ListWidget_01.addItem(item)
+        if cmds.objExists('legPoseList_Grp'):
+            for item in pm.PyNode('legPoseList_Grp').getChildren():
+                self.leg_ListWidget_01.addItem(str(item))
+
         # 将没有对应poseGrp的item设置为不可选状态
         self.check_ifnot_PoseGrp(self.leg_ListWidget_01)
         # 创建leg_sculpt布局
@@ -243,8 +260,10 @@ class CorrectiveBsUI(QtWidgets.QDialog):
 
 
         # 将 pose添加进listWidget中
-        for item in self.fingerPoseList:
-            self.finger_ListWidget_01.addItem(item)
+        if cmds.objExists('fingerPoseList_Grp'):
+            for item in pm.PyNode('fingerPoseList_Grp').getChildren():
+                self.finger_ListWidget_01.addItem(str(item))
+
         # 创建finger_sculpt布局
         self.finger_mirror_CB = QtWidgets.QCheckBox('Mirror')
         self.finger_mirror_CB.setChecked(True)
@@ -265,8 +284,9 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.torso_setAni = self.torso_contextMenu.addAction('Set Animation')
         self.torso_delAni = self.torso_contextMenu.addAction('Del Animation')
         # 将 pose添加进listWidget中
-        for item in self.torsoPoseList:
-            self.torso_ListWidget_01.addItem(item)
+        if cmds.objExists('torsoPoseList_Grp'):
+            for item in pm.PyNode('torsoPoseList_Grp').getChildren():
+                self.torso_ListWidget_01.addItem(str(item))
         # 将没有对应poseGrp的item设置为不可选状态
         self.check_ifnot_PoseGrp(self.torso_ListWidget_01)
         # 创建torso_sculpt布局
@@ -595,10 +615,10 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         if bsNode:
             tool.del_blendShape(bsNode)
             self.blendshape_comboBox.clear()
-        if targetGeo:
+        if cmds.objExists(targetGeo):
             tool.del_targetGeo(targetGeo)
             self.targetGeo_LineEdit.clear()
-        if bsTargetGrp:
+        if cmds.objExists(bsTargetGrp):
             cmds.delete(bsTargetGrp)
 
         om.MGlobal_displayInfo('QBJ_Tip : Delete blendShape Node successfully !')
@@ -619,7 +639,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         if ListWidget_01.currentItem():
             pose = ListWidget_01.currentItem().text()
 
-            if  not pose.startswith('-'):
+            if  not pose.startswith('__'):
                 # 将sculpt_Btn及其余的item设置为不可选状态
                 self.lock_allItem(ListWidget_01,sculpt_Btn)
                 # 创建 tempSculptGrp，进入雕刻模式
@@ -637,7 +657,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
             baseGeo = self.baseGeo_LineEdit.text()
             pose = ListWidget_01.currentItem().text()
 
-            if not pose.startswith('-'):
+            if not pose.startswith('__'):
                 sculptGeo = '{}_{}_sculpt'.format(baseGeo, pose)
 
                 # 删除控制器驱动动画
@@ -700,8 +720,6 @@ class CorrectiveBsUI(QtWidgets.QDialog):
 
         pose = ListWidget_01.currentItem().text()
 
-        # # 获取对应命名的target
-        # self.load_targetName( blendShapeNode, ListWidget_01)
         # 获取所选择的item对应的控制器的旋转数值
         self.set_RotateLineEdit_Value(ListWidget_01)
         # 清除所有控制器上的数值
@@ -711,7 +729,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         # 获取Driver信息
         self.loadDriverInfo(ListWidget_01)
         # 选中对应的fkCtrl
-        if not pose.startswith('-'):
+        if not pose.startswith('__'):
             fkCtrl = 'FK' + pose.split('_')[0] + '_' + pose.split('_')[1]
             cmds.select(fkCtrl, r=True)
 
@@ -743,7 +761,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         # 获取Driver信息
         self.loadFingerDriverInfo()
         # 选中对应的fkCtrl
-        if not fingerPose.startswith('-'):
+        if not fingerPose.startswith('__'):
             fkCtrl = 'FK' + fingerPose.split('_')[0] + '_' + fingerPose.split('_')[1]
             cmds.select(fkCtrl, r=True)
 
@@ -757,7 +775,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
     def loadDriverInfo(self,ListWidget_01):
         pose = ListWidget_01.currentItem().text()
         # 过滤以'_'开头的item
-        if not pose.startswith('-'):
+        if not pose.startswith('__'):
             poseGrp = pose.split('_')[0] + '_' + pose.split('_')[1] + '_poseGrp'
             # 将poseGrp上的数据显示在driver_LineEdit中
             if cmds.objExists(poseGrp):
@@ -782,8 +800,8 @@ class CorrectiveBsUI(QtWidgets.QDialog):
     # def load_targetName(self,blendShapeNode,ListWidget_01):
     #     pose = ListWidget_01.currentItem().text()
     #     if blendShapeNode:
-    #         # 过滤以'-'开头的item
-    #         if not pose.startswith('-'):
+    #         # 过滤以'__'开头的item
+    #         if not pose.startswith('__'):
     #             # 获取指点命名的target，并添加到ListWidget_02中
     #             allTargets = cmds.aliasAttr(blendShapeNode, q=True)
     #             targetName = []
@@ -795,7 +813,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
     def clearCtrlRotation(self):
         # 将pose，命名转化为fkCtrl后，将rotate数值清零
         for i in self.allPoseList:
-            if not i.startswith('-'):
+            if not i.startswith('__'):
                 fkCtrl = 'FK' + i.split('_')[0] + '_' + i.split('_')[1]
                 try:
                     for axis in ['rx','ry','rz']:
@@ -807,7 +825,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
     def setCtrlRotation (self,ListWidget_01):
         rotateValue = self.returnRotateValue()
         pose = ListWidget_01.currentItem().text()
-        if not pose.startswith('-'):
+        if not pose.startswith('__'):
             fkCtrl = 'FK' + pose.split('_')[0]+'_'+pose.split('_')[1]
             if cmds.objExists(fkCtrl):
                 for rotate,value in rotateValue.items():
@@ -840,7 +858,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         pose = ListWidget_01.currentItem().text()
         hideGrp = pose.replace(pose.split('_')[-1],'poseGrp_Hide')
         if cmds.objExists(hideGrp):
-            valueList = cmds.getAttr('{}.{}'.format(hideGrp,pose.split('_')[-1]))
+            valueList = cmds.getAttr('{}.{}'.format(hideGrp,pose))
             self.rotate_LineEdit_01.setText(str(valueList[0][0]))
             self.rotate_LineEdit_02.setText(str(valueList[0][1]))
             self.rotate_LineEdit_03.setText(str(valueList[0][2]))
@@ -850,7 +868,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         pose = ListWidget_01.currentItem().text()
         # self.set_RotateLineEdit_Value(ListWidget_01)
         rotateValueDict = self.returnRotateValue()
-        if not pose.startswith('-'):
+        if not pose.startswith('__'):
             # 将时间滑块的范围调整成1-25帧
             try:
                 cmds.playbackOptions(edit=True,min=1,max=25,ast=1,aet=25)
@@ -869,7 +887,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
 
     def click_delAnimation(self,ListWidget_01):
         pose = ListWidget_01.currentItem().text()
-        if not pose.startswith('-'):
+        if not pose.startswith('__'):
             fkCtrl = 'FK' + pose.split('_')[0]+'_'+pose.split('_')[1]
             if cmds.objExists(fkCtrl):
                 animNodeList = cmds.listConnections(fkCtrl,type='animCurveTA')
@@ -905,7 +923,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         if cmds.objExists(fkCtrl):
             valueList = [cmds.getAttr('{}.{}'.format(fkCtrl, axis)) for axis in ['rx', 'ry', 'rz']]
 
-        if not pose.startswith('-'):
+        if not pose.startswith('__'):
             tool.update_poseHide_Info(pose,valueList)
             tool.update_PoseLocPosition(fkCtrl,pose,valueList)
             tool.update_animNode(pose)
@@ -933,7 +951,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         fkCtrl_R = fkCtrl.replace('_L', '_R')
         poseGrp_Hide_R = 'Finger_R_poseGrp_Hide'
 
-        if not pose.startswith('-'):
+        if not pose.startswith('__'):
             tool.update_fingerPoseHide_Info(pose,fkCtrl,poseGrp_Hide)
             tool.update_fingerAnimNode(pose,poseGrp_Hide)
             om.MGlobal_displayInfo('QBJ_Tip : Update Driver successfully !')
@@ -944,9 +962,13 @@ class CorrectiveBsUI(QtWidgets.QDialog):
 
 
     def click_addPose(self,ListWidget_01):
+        pose = ListWidget_01.selectedItems()[0].text()
         index =  ListWidget_01.currentIndex().row()
-
-        print 'click_addPose'
+        fkCtrl =  'FK' + pose.split('_')[0] + '_' + pose.split('_')[1]
+        values = [cmds.getAttr('{}.{}'.format(fkCtrl,attr)) for attr in ['rx','ry','rz']]
+        print values
+        if not pose.startswith('_'):
+            self.add_pose(index,pose,values,ListWidget_01)
 
 
     def click_fingerAddPose(self):
@@ -988,7 +1010,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         fingerPoseGrp = 'Finger_L_poseGrp'
         fingerPose = self.finger_ListWidget_01.currentItem().text()
         # 将poseGrp上的数据显示在driver_LineEdit中
-        if not fingerPose.startswith('-'):
+        if not fingerPose.startswith('__'):
             if cmds.objExists(fingerPoseGrp):
                 value = cmds.getAttr('{}.{}'.format(fingerPoseGrp, fingerPose))
                 self.driver_LineEdit.setText('{}.{}'.format(fingerPoseGrp, fingerPose))
@@ -1004,7 +1026,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         fingerPose = self.finger_ListWidget_01.currentItem().text()
         hideGrp = 'Finger_L_poseGrp_Hide'
         if cmds.objExists(hideGrp):
-            if not fingerPose.startswith('-'):
+            if not fingerPose.startswith('__'):
                 valueList = cmds.getAttr('{}.{}'.format(hideGrp,fingerPose))
                 self.rotate_LineEdit_01.setText(str(valueList[0][0]))
                 self.rotate_LineEdit_02.setText(str(valueList[0][1]))
@@ -1032,3 +1054,37 @@ class CorrectiveBsUI(QtWidgets.QDialog):
             pose.setFlags(pose.flags() | QtCore.Qt.ItemIsEnabled)
 
 
+    def add_pose(self,index,pose,values,ListWidget_01):
+        poseGrp = pose.split('_')[0] + '_' + pose.split('_')[1] + '_poseGrp'
+        hideGrp = poseGrp + '_Hide'
+        if not cmds.objExists(poseGrp):
+            om.MGlobal_displayError('QBJ_Tip : Can not find {} !!!'.format(poseGrp))
+            return
+        if not cmds.objExists(hideGrp):
+            om.MGlobal_displayError('QBJ_Tip : Can not find {} !!!'.format(hideGrp))
+            return
+
+        # 弹出poseName设置框
+        text = self.addPoseInputDialog(pose)
+        if text:
+            # 将 新pose添加在ListWidget_01上
+            ListWidget_01.insertItem(index + 1, text)
+            # 在 PoseList_Grp中创建相同命名的组，用来记录
+            tool.add_UIPoseGrp(index,pose,text)
+            # 将 新pose 添加到 poseGrp 和 hideGrp 中
+            tool.add_pose_to_poseGrp(pose,values,text,poseGrp,hideGrp)
+            # 创建新的动画曲线，驱动 poseGrp 上的数值
+            tool.create_poseAnimNode()
+
+
+    def addPoseInputDialog(self,pose):
+        result = cmds.promptDialog(t='Add Pose',
+                                   message='Input Pose Name:',
+                                   text=pose,
+                                   button = ['Apply','Cancel'],
+                                   defaultButton = 'Apply',
+                                   cancelButton = 'Cancel',
+                                   dismissString = 'Cancel')
+        if result == 'Apply':
+            text = cmds.promptDialog(q=True,text=True)
+            return text
