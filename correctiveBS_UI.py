@@ -513,7 +513,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.arm_delAni.triggered.connect(lambda : self.click_delAnimation(self.arm_ListWidget_01))
         self.arm_updateDriver.triggered.connect(lambda : self.click_updateDriver(self.arm_ListWidget_01,
                                                                                  self.arm_mirror_CB))
-        self.arm_addPose.triggered.connect(lambda : self.click_addPose(self.arm_ListWidget_01))
+        self.arm_addPose.triggered.connect(lambda : self.click_addPose(self.arm_ListWidget_01,self.arm_mirror_CB))
         self.arm_removePose.triggered.connect(lambda : self.click_removePose(self.arm_ListWidget_01))
         self.arm_resetPose.triggered.connect(lambda : self.click_resetPose(self.arm_ListWidget_01,self.arm_mirror_CB))
 
@@ -524,7 +524,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.leg_delAni.triggered.connect(lambda: self.click_delAnimation(self.leg_ListWidget_01))
         self.leg_updateDriver.triggered.connect(lambda:self.click_updateDriver(self.leg_ListWidget_01,
                                                                                self.leg_mirror_CB))
-        self.leg_addPose.triggered.connect(lambda : self.click_addPose(self.leg_ListWidget_01))
+        self.leg_addPose.triggered.connect(lambda : self.click_addPose(self.leg_ListWidget_01,self.leg_mirror_CB))
         self.leg_removePose.triggered.connect(lambda: self.click_removePose(self.leg_ListWidget_01))
         self.leg_resetPose.triggered.connect(lambda: self.click_resetPose(self.leg_ListWidget_01,self.arm_mirror_CB))
 
@@ -545,7 +545,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.torso_delAni.triggered.connect(lambda: self.click_delAnimation(self.torso_ListWidget_01))
         self.torso_updateDriver.triggered.connect(lambda : self.click_updateDriver(self.torso_ListWidget_01,
                                                                                    self.torso_mirror_CB))
-        self.torso_addPose.triggered.connect(lambda : self.click_addPose(self.torso_ListWidget_01))
+        self.torso_addPose.triggered.connect(lambda : self.click_addPose(self.torso_ListWidget_01,self.torso_mirror_CB))
         self.torso_removePose.triggered.connect(lambda: self.click_removePose(self.torso_ListWidget_01))
         self.torso_resetPose.triggered.connect(lambda: self.click_resetPose(self.torso_ListWidget_01,self.torso_mirror_CB))
 
@@ -678,7 +678,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         # 为 baseGeo 创建blendShape，并将生成的target和bsNode加载到Gui中
         baseGeo = self.baseGeo_LineEdit.text()
         targetGeo = self.targetGeo_LineEdit.text()
-        if baseGeo:
+        if cmds.objExists(baseGeo):
             targetGeo_bsNode_list = tool.add_blendShape(baseGeo,targetGeo,allPoseList)
             # 在targetGeoGrp组上添加bsTargetInfo
             self.targetGeo_LineEdit.setText(str(targetGeo_bsNode_list[0]))
@@ -689,17 +689,17 @@ class CorrectiveBsUI(QtWidgets.QDialog):
 
     def changeTargetGeo(self):
         # 将targetGeo_LineEdit的名称 ，替换为此时用户选中的模型名称
-        targetGeo = tool.load_targetGeo()
+        targetOriGeo = tool.load_targetOriGeo()
         attrs_list = ['.tx', '.ty', '.tz', '.rx', '.ry', '.rz', '.sx', '.sy', '.sz', '.v']
         # 尝试将 targetGeo上的属性解锁
         try:
             for attr in attrs_list:
-                cmds.setAttr('{}{}'.format(targetGeo, attr), lock=False)
+                cmds.setAttr('{}{}'.format(targetOriGeo, attr), lock=False)
         except:
             pass
 
-        if targetGeo:
-            self.targetGeo_LineEdit.setText(str(targetGeo))
+        if targetOriGeo:
+            self.targetGeo_LineEdit.setText(str(targetOriGeo))
 
 
     def addBlendShapeConfirmDialog(self):
@@ -961,14 +961,31 @@ class CorrectiveBsUI(QtWidgets.QDialog):
                 om.MGlobal_displayInfo('QBJ_Tip : Update Driver successfully !')
 
 
-    def click_addPose(self,ListWidget_01):
-        pose = ListWidget_01.selectedItems()[0].text()
+    def click_addPose(self,ListWidget_01,mirror_cb):
+        pose = cmds.getAttr('{}.pose'.format(ListWidget_01.selectedItems()[0].text()))
         index =  ListWidget_01.currentIndex().row()
+        mirror = mirror_cb.isChecked()
         fkCtrl =  'FK' + pose.split('_')[0] + '_' + pose.split('_')[1]
-        values = [cmds.getAttr('{}.{}'.format(fkCtrl,attr)) for attr in ['rx','ry','rz']]
-        print values
+        newPoseValues = [cmds.getAttr('{}.{}'.format(fkCtrl,attr)) for attr in ['rx','ry','rz']]
+        poseGrp = pose.split('_')[0] + '_' + pose.split('_')[1] + '_poseGrp'
+        hideGrp = poseGrp + '_Hide'
+        poseValues = cmds.getAttr('{}.{}'.format(hideGrp, pose))[0]
+        if not cmds.objExists(poseGrp):
+            om.MGlobal_displayError('QBJ_Tip : Can not find {} !!!'.format(poseGrp))
+            return
+        if not cmds.objExists(hideGrp):
+            om.MGlobal_displayError('QBJ_Tip : Can not find {} !!!'.format(hideGrp))
+            return
+
         if not pose.startswith('_'):
-            self.add_pose(index,pose,values,ListWidget_01)
+            # 弹出poseName设置框
+            newPose = self.addPoseInputDialog(pose)
+            if newPose:
+                # 将 新pose添加在ListWidget_01上
+                ListWidget_01.insertItem(index + 1, newPose)
+                self.add_pose(mirror,index,pose,poseValues,newPose,newPoseValues,poseGrp,
+                              hideGrp)
+
 
 
     def click_fingerAddPose(self):
@@ -1054,27 +1071,26 @@ class CorrectiveBsUI(QtWidgets.QDialog):
             pose.setFlags(pose.flags() | QtCore.Qt.ItemIsEnabled)
 
 
-    def add_pose(self,index,pose,values,ListWidget_01):
-        poseGrp = pose.split('_')[0] + '_' + pose.split('_')[1] + '_poseGrp'
-        hideGrp = poseGrp + '_Hide'
-        if not cmds.objExists(poseGrp):
-            om.MGlobal_displayError('QBJ_Tip : Can not find {} !!!'.format(poseGrp))
-            return
-        if not cmds.objExists(hideGrp):
-            om.MGlobal_displayError('QBJ_Tip : Can not find {} !!!'.format(hideGrp))
-            return
+    def add_pose(self,mirror,index,pose,poseValues,newPose,newPoseValues,poseGrp,hideGrp):
 
-        # 弹出poseName设置框
-        text = self.addPoseInputDialog(pose)
-        if text:
-            # 将 新pose添加在ListWidget_01上
-            ListWidget_01.insertItem(index + 1, text)
             # 在 PoseList_Grp中创建相同命名的组，用来记录
-            tool.add_UIPoseGrp(index,pose,text)
+            tool.add_UIPoseGrp(index,pose,newPose)
             # 将 新pose 添加到 poseGrp 和 hideGrp 中
-            tool.add_pose_to_poseGrp(pose,values,text,poseGrp,hideGrp)
+            tool.add_pose_to_poseGrp(poseGrp,newPose,newPoseValues,hideGrp)
             # 创建新的动画曲线，驱动 poseGrp 上的数值
-            tool.create_poseAnimNode()
+            tool.create_poseAnimNode(pose,poseValues,poseGrp,newPose,newPoseValues)
+            if mirror:
+                pose_R = pose.replace('_L_','_R_')
+                poseValues_R = poseValues
+                newPose_R = newPose.replace('_L_','_R_')
+                newPoseValues_R = newPoseValues
+                poseGrp_R = poseGrp.replace('_L_','_R_')
+                hideGrp_R  = hideGrp.replace('_L_','_R_')
+                # 将 新pose 添加到 poseGrp 和 hideGrp 中
+                tool.add_pose_to_poseGrp(poseGrp_R, newPose_R, newPoseValues_R, hideGrp_R)
+                # 创建新的动画曲线，驱动 poseGrp 上的数值
+                tool.create_poseAnimNode(pose_R, poseValues_R, poseGrp_R,newPose_R, newPoseValues_R )
+            om.MGlobal_displayInfo('QBJ_Tip : Add Pose Successfully !')
 
 
     def addPoseInputDialog(self,pose):
@@ -1086,5 +1102,5 @@ class CorrectiveBsUI(QtWidgets.QDialog):
                                    cancelButton = 'Cancel',
                                    dismissString = 'Cancel')
         if result == 'Apply':
-            text = cmds.promptDialog(q=True,text=True)
-            return text
+            newPose = cmds.promptDialog(q=True,text=True)
+            return newPose

@@ -126,11 +126,11 @@ class CorrectiveBsTool(object):
                 return targetGeo
 
 
-    def load_targetGeo(self):
-        targetGeo = cmds.ls(sl=True)
-        if len(targetGeo) == 1:
-            if self.mesh_judge(targetGeo):
-                return targetGeo[0]
+    def load_targetOriGeo(self):
+        targetOriGeo = cmds.ls(sl=True)
+        if len(targetOriGeo) == 1:
+            if self.mesh_judge(targetOriGeo):
+                return targetOriGeo[0]
             else:
                 om.MGlobal_displayWarning('QBJ_Tip : Please select "polygon" !! ')
         else:
@@ -174,25 +174,33 @@ class CorrectiveBsTool(object):
             self.add_bsTargetInfo(baseGeo,allPoseList)
 
         # 给baseGeo添加blendShape
-        if  baseGeo:
-            default_targetGeoName = baseGeo + '_target'
-            if targetGeo:
-                if not self.get_blendshape(baseGeo):
-                    blendShapeNode = cmds.blendShape(baseGeo,
-                                                     name='{}_bs'.format(baseGeo),frontOfChain=True,tc=True)
-                    return default_targetGeoName,blendShapeNode
-            else:
-                targetGeo = cmds.duplicate(baseGeo,name = '{}_target'.format(baseGeo))
-                attrs_list = ['.tx', '.ty', '.tz', '.rx', '.ry', '.rz', '.sx', '.sy', '.sz', '.v']
-                for attr in attrs_list:
-                    cmds.setAttr('{}{}'.format(targetGeo[0], attr), lock=False)
-                cmds.parent(targetGeo, bsTargetGrp)
-                cmds.setAttr('{}.v'.format(targetGeo[0]),0)
-                cmds.select(cl=True)
-                if not self.get_blendshape(baseGeo):
-                    blendShapeNode = cmds.blendShape( baseGeo,
-                                                     name='{}_bs'.format(baseGeo), frontOfChain=True, tc=True)
-                    return targetGeo[0],blendShapeNode
+        default_targetGeoName = baseGeo + '_target'
+        if cmds.objExists(targetGeo):
+            if not self.get_blendshape(baseGeo):
+                blendShapeNode = cmds.blendShape(baseGeo,
+                                                 name='{}_bs'.format(baseGeo),frontOfChain=True,tc=True)
+                return default_targetGeoName,blendShapeNode
+        else:
+            targetOriGeo = self.create_targetOriGeo(baseGeo)
+            attrs_list = ['.tx', '.ty', '.tz', '.rx', '.ry', '.rz', '.sx', '.sy', '.sz', '.v']
+            for attr in attrs_list:
+                cmds.setAttr('{}{}'.format(targetOriGeo[0], attr), lock=False)
+            cmds.parent(targetOriGeo, bsTargetGrp)
+            cmds.setAttr('{}.v'.format(targetOriGeo[0]),0)
+            cmds.select(cl=True)
+            if not self.get_blendshape(baseGeo):
+                blendShapeNode = cmds.blendShape( baseGeo,
+                                                 name='{}_bs'.format(baseGeo), frontOfChain=True, tc=True)
+                return targetGeo,blendShapeNode
+
+
+    def create_targetOriGeo(self,baseGeo):
+        skinCluster = pm.mel.findRelatedSkinCluster(baseGeo)
+        if skinCluster != '':
+            pm.setAttr('{}.envelope'.format(skinCluster),0)
+        targetOriGeo = cmds.duplicate(baseGeo,name = '{}_target'.format(baseGeo))
+        pm.setAttr('{}.envelope'.format(skinCluster),1)
+        return targetOriGeo
 
 
     def del_blendShape(self,bs_node):
@@ -688,17 +696,20 @@ class CorrectiveBsTool(object):
             PoseListGrp = cmds.group(name=PoseListGrp, empty=True, parent=allPoseRootGrp)
             for pose in PoseList:
                 poseGrp = cmds.group(name=pose, empty=True)
+                cmds.addAttr(pose,ln = "pose", dt = 'string')
+                cmds.setAttr('{}.pose'.format(poseGrp),'{}'.format(pose),type='string')
                 cmds.parent(poseGrp, PoseListGrp)
 
         cmds.select(cl=True)
 
 
-    def add_UIPoseGrp(self,index,pose,text):
+    def add_UIPoseGrp(self,index,pose,newPose):
         if pm.objExists(pose):
             if len(pm.ls(pose))==1:
                 PoseList_Grp = pm.PyNode(pose).getParent()
-                newPoseGrp = pm.group(name=text,empty=True,parent = str(PoseList_Grp))
-
+                newPoseGrp = pm.group(name=newPose,empty=True,parent = str(PoseList_Grp))
+                cmds.addAttr(newPose,longName='pose',dt='string')
+                cmds.setAttr('{}.pose'.format(newPoseGrp),pose,type='string')
                 pm.reorder(newPoseGrp,relative = index +2)
             else:
                 om.MGlobal_displayError('QBJ_Tip : "{}" is not unique in the scene !!!'.format(pose))
@@ -706,29 +717,45 @@ class CorrectiveBsTool(object):
             om.MGlobal_displayError('QBJ_Tip : "{}" is not in the scene !!!'.format(pose))
 
 
-    def add_pose_to_poseGrp(self,pose,values,text,poseGrp,hideGrp):
+    def add_pose_to_poseGrp(self,poseGrp,newPose,newPoseValues,hideGrp):
 
         # 将用户输入的 targetName 写入对应poseGrp组内
-        cmds.addAttr(poseGrp ,longName = text ,attributeType='double')
+        cmds.addAttr(poseGrp ,longName = newPose ,attributeType='double')
 
         # 将用户输入的 targetName 写入对应 hideGrp 组内
-        cmds.addAttr(hideGrp,longName=text,attributeType='double3',keyable=False,readable=True)
+        cmds.addAttr(hideGrp,longName=newPose,attributeType='double3',keyable=False,readable=True)
         for num in range(3):
-            cmds.addAttr(hideGrp, longName='{}_0{}'.format(text,num),
+            cmds.addAttr(hideGrp, longName='{}_0{}'.format(newPose,num),
                          attributeType='double',
-                         parent='{}'.format(text),
+                         parent='{}'.format(newPose),
                          keyable=False)
-        cmds.setAttr('{}.{}'.format(hideGrp, text), values[0], values[1], values[2])
+        cmds.setAttr('{}.{}'.format(hideGrp, newPose), newPoseValues[0], newPoseValues[1], newPoseValues[2])
 
 
-    def create_poseAnimNode(self,pose,text,poseGrp):
-        poseAnimNode = '{}_animUU'.format(text)
+    def create_poseAnimNode(self,pose,poseValues,poseGrp,newPose,newPoseValues):
+        poseAnimNode = '{}_animUU'.format(newPose)
+
+        angleNode = '{}_angle'.format(pose)
+        # 如果没有找到对应的angleNode，就报错并返回
+        if not cmds.objExists(angleNode):
+            om.MGlobal_displayError('QBJ_Tip : The "{}" cannot be found '.format(angleNode))
+            return
+        # 检查是否已创建同样命名的节点
         if not cmds.objExists(poseAnimNode):
-            poseAnimNode = cmds.createNode('animCurveUU',name = '{}_animUU'.format(text))
-            cmds.connectAttr('{}_angle'.format(pose), '{}.input'.format(poseAnimNode))
-            cmds.connectAttr('{}.output'.format(poseAnimNode),'{}.{}'.format(poseGrp,text))
+            poseAnimNode = cmds.createNode('animCurveUU',name = '{}_animUU'.format(newPose))
+        # 将 angleNode 上的 axisAngle.angle 属性连接给 poseAnimNode 的 input
+        cmds.connectAttr('{}.axisAngle.angle'.format(angleNode), '{}.input'.format(poseAnimNode))
+        # 将 poseAnimNode 的output 属性 连接给 poseGrp 上的新添加的 pose 属性
+        cmds.connectAttr('{}.output'.format(poseAnimNode),'{}.{}'.format(poseGrp,newPose))
 
-
+        # 根据pose的方向，来确定设置的数值
+        valueIndex = self.angleReadableDict[pose.split('_')[-1]]
+        poseValue = poseValues[valueIndex]
+        newPoseValue = newPoseValues[valueIndex]
+        cmds.setKeyframe(poseAnimNode, float = (poseValue - newPoseValue), value=1,
+                         itt='Linear', ott='Linear')
+        cmds.setKeyframe(poseAnimNode, float = poseValue, value=0,
+                         itt='Linear',ott='Linear')
 
 
     # def check_exists_bsTargetInfo(self,baseGeo,pose):
