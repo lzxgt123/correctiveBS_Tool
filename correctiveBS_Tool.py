@@ -127,9 +127,15 @@ class CorrectiveBsTool(object):
 
 
     def load_targetOriGeo(self):
-        targetOriGeo = cmds.ls(sl=True)
+        targetOriGeo = cmds.ls(sl=True,tr=True)
+        attrs_list = ['tx', 'ty', 'tz', 'rx', 'ry', 'rz', 'sx', 'sy', 'sz', 'v']
         if len(targetOriGeo) == 1:
             if self.mesh_judge(targetOriGeo):
+                try:
+                    for attr in attrs_list:
+                        pm.mel.eval('CBunlockAttr "{}.{}";'.format(targetOriGeo, attr))
+                except:
+                    pass
                 return targetOriGeo[0]
             else:
                 om.MGlobal_displayWarning('QBJ_Tip : Please select "polygon" !! ')
@@ -408,18 +414,24 @@ class CorrectiveBsTool(object):
             targetGeo = cmds.duplicate(targetOri_Geo, name = targetGeo)
 
 
-    def connect_poseGrp_to_target(self, baseGeo, pose, bsNode, poseGrp, target):
+    def connect_poseGrp_to_target(self, baseGeo, pose,poseAttr, bsNode, poseGrp, driverValue,target):
 
-        # 创建一个animUU 节点
-        animCurveUU_node = cmds.createNode('animCurveUU', name='{}_{}_{}'.format(baseGeo, pose, bsNode))
 
-        # 将 animUU上的 input 和 output 属性分别连接给poseGrp 和 blendShape上的target
-        cmds.connectAttr('{}.{}'.format(poseGrp, pose), '{}.input'.format(animCurveUU_node))
-        cmds.connectAttr('{}.output'.format(animCurveUU_node), '{}.{}'.format(bsNode, target))
+            # 创建一个animUU 节点
+            animCurveUU_node = cmds.createNode('animCurveUU', name='{}_{}_{}'.format(baseGeo, pose, bsNode))
 
-        # 设置 animCurveUU_node上的属性，将
-        cmds.setKeyframe(animCurveUU_node, float=0, value=0, itt='flat', ott='flat')
-        cmds.setKeyframe(animCurveUU_node, float=1, value=1, itt='flat', ott='flat')
+            # 将 animUU上的 input 和 output 属性分别连接给poseGrp 和 blendShape上的target
+            cmds.connectAttr('{}.{}'.format(poseGrp, poseAttr), '{}.input'.format(animCurveUU_node))
+            cmds.connectAttr('{}.output'.format(animCurveUU_node), '{}.{}'.format(bsNode, target))
+
+            # 设置 animCurveUU_node上的属性
+            if driverValue == 1:
+                cmds.setKeyframe(animCurveUU_node, float=0, value=0, itt='flat', ott='flat')
+                cmds.setKeyframe(animCurveUU_node, float=driverValue, value=1, itt='flat', ott='flat')
+            else:
+                cmds.setKeyframe(animCurveUU_node, float=0, value=0, itt='flat', ott='flat')
+                cmds.setKeyframe(animCurveUU_node, float=driverValue, value=1, itt='flat', ott='flat')
+                cmds.setKeyframe(animCurveUU_node, float=1, value=0, itt='flat', ott='flat')
 
 
     def exist_Target(self, bsNode, target):
@@ -442,8 +454,9 @@ class CorrectiveBsTool(object):
             return None
 
 
-    def add_Target_To_BsNode(self, baseGeo, pose, bsNode, poseGrp, targetGeo):
+    def add_Target_To_BsNode(self, baseGeo, bsNode,driverValue,pose,poseAttr, poseGrp, targetGeo):
         target = targetGeo
+
         # 如果存在 新增的修型目标体，就把他添加进 blendShape 中
         if cmds.aliasAttr(bsNode, q=True):
             index = len(cmds.aliasAttr(bsNode, q=True))
@@ -452,12 +465,12 @@ class CorrectiveBsTool(object):
         if not self.exist_Target(bsNode, target):
             cmds.select(targetGeo,r=True)
             cmds.blendShape(bsNode, edit=True, t=(baseGeo, index, target, 1.0))
-            self.connect_poseGrp_to_target(baseGeo,pose,bsNode,poseGrp,target)
+            self.connect_poseGrp_to_target(baseGeo,pose,poseAttr,bsNode,poseGrp,driverValue,target)
             index += 1
             cmds.select(cl=True)
 
 
-    def create_tempSculptGrp(self, baseGeo, pose,targetOri_Geo, targetGeo,bsNode):
+    def create_tempSculptGrp(self, baseGeo, bsNode,pose, targetGeo):
         '''
         :param baseGeo: the baseGeo has skinCluster  ---str---
         :param pose:  current select pose name  ---str---
@@ -478,7 +491,7 @@ class CorrectiveBsTool(object):
         cmds.setAttr('{}.envelope'.format(bsNode),0)
         # 创建 inverted_Geo，将显示设置为0
         inverted_Geo = cvshapeinverter.invert(baseGeo,sculptGeo[0],name='{}_{}_inverted'.format(baseGeo,pose))
-        inverted_neg_Geo = cmds.duplicate(baseGeo, name='{}_neg'.format(inverted_Geo))
+        inverted_neg_Geo = cmds.duplicate(inverted_Geo, name='{}_neg'.format(inverted_Geo))
         cmds.setAttr('{}.v'.format(inverted_Geo), 0)
         cmds.setAttr('{}.v'.format(inverted_neg_Geo[0]), 0)
         '''
@@ -495,7 +508,7 @@ class CorrectiveBsTool(object):
         cmds.parent(sculptGeo, inverted_Geo,inverted_neg_Geo, tempSculptGrp)
 
         # 将 inverted_Geo 和 inverted_neg_Geo 与 targetGeo 进行融合变形
-        temp_bsNode = cmds.blendShape(inverted_Geo,targetGeo,name='temp_{}_bs'.format(targetGeo))
+        temp_bsNode = cmds.blendShape(inverted_Geo,inverted_neg_Geo,targetGeo,name='temp_{}_bs'.format(targetGeo))
         cmds.blendShape(temp_bsNode,edit=True,w=[(0, 1.0), (1, -1.0)])
 
         # 取消选择的物体
@@ -507,53 +520,55 @@ class CorrectiveBsTool(object):
 
         sculptGeo_blinn = '{}_rigSculpt_skin'.format(baseGeo)
         rigSculpt_skinSG = '{}SG'.format(sculptGeo_blinn)
-        # 检查sculptGeo是否已经连接了shadingNode
+        # 如果场景中有sculptGeo_blinn ,就删除
+        if cmds.objExists(rigSculpt_skinSG):
+            cmds.delete(rigSculpt_skinSG)
+        if not cmds.objExists(sculptGeo_blinn):
+            cmds.delete(sculptGeo_blinn)
 
+        # 检查sculptGeo是否已经连接了shadingNode
         connectedAttr = cmds.listConnections('{}Shape.instObjGroups[0]'.format(sculptGeo),destination=True, plugs=True)
         if connectedAttr:
             cmds.disconnectAttr('{}Shape.instObjGroups[0]'.format(sculptGeo),connectedAttr[0])
 
-        # 如果场景中没有sculptGeo_blinn ,就创建
-        if not cmds.objExists(rigSculpt_skinSG):
-            rigSculpt_skinSG = cmds.createNode('shadingEngine',name = '{}SG'.format(sculptGeo_blinn))
-            if not cmds.objExists(sculptGeo_blinn):
-                sculptGeo_blinn = cmds.shadingNode('blinn', asShader=True, name='{}_rigSculpt_skin'.format(baseGeo))
-            cmds.connectAttr('{}.outColor'.format(sculptGeo_blinn),'{}.surfaceShader'.format(rigSculpt_skinSG))
+        # 创建 rigSculpt_skinSG 和 sculptGeo_blinn节点
+        rigSculpt_skinSG = cmds.createNode('shadingEngine',name = '{}SG'.format(sculptGeo_blinn))
+        sculptGeo_blinn = cmds.shadingNode('blinn', asShader=True, name='{}_rigSculpt_skin'.format(baseGeo))
+        cmds.connectAttr('{}.outColor'.format(sculptGeo_blinn),'{}.surfaceShader'.format(rigSculpt_skinSG))
+        cmds.sets('{}Shape'.format(sculptGeo), edit=True,forceElement = rigSculpt_skinSG )
 
-            cmds.sets('{}Shape'.format(sculptGeo), edit=True,forceElement = rigSculpt_skinSG )
+        # 设置 sculptGeo_blinn 参数
+        color = [0.168, 0.434, 0.679]
+        ambientColor = [0.1, 0.1, 0.1]
+        eccentricity = [0.5]
+        cmds.setAttr('{}.color'.format(sculptGeo_blinn), color[0], color[1], color[2], type='double3')
+        cmds.setAttr('{}.ambientColor'.format(sculptGeo_blinn), ambientColor[0], ambientColor[1], ambientColor[2],
+                     type='double3')
+        cmds.setAttr('{}.eccentricity'.format(sculptGeo_blinn), eccentricity[0])
 
-            # 设置 sculptGeo_blinn 参数
-            color = [0.168, 0.434, 0.679]
-            ambientColor = [0.1, 0.1, 0.1]
-            eccentricity = [0.5]
-            cmds.setAttr('{}.color'.format(sculptGeo_blinn), color[0], color[1], color[2], type='double3')
-            cmds.setAttr('{}.ambientColor'.format(sculptGeo_blinn), ambientColor[0], ambientColor[1], ambientColor[2],
-                         type='double3')
-            cmds.setAttr('{}.eccentricity'.format(sculptGeo_blinn), eccentricity[0])
-
-            cmds.select(cl=True)
-        else:
-            cmds.sets('{}Shape'.format(sculptGeo),forceElement=rigSculpt_skinSG,edit=True)
-            cmds.select(cl=True)
+        cmds.select(cl=True)
 
 
-    def enterSculptMode(self, baseGeo, bsNode, pose, targetOri_Geo, mirror, poseGrp):
+    def enterSculptMode(self, baseGeo, bsNode, pose, targetOri_Geo, mirror, poseGrp,driverValue):
         sculptGeo = '{}_{}_sculpt'.format(baseGeo, pose)
         targetGeo = '{}_{}'.format(baseGeo, pose)
-
         targetGeo_R = '{}_{}'.format(baseGeo, pose.replace('_L_', '_R_'))
         poseGrp_R = poseGrp.replace('_L_', '_R_')
         pose_R = pose.replace('_L_', '_R_')
+        poseAttr = cmds.getAttr('{}.pose'.format(pose))
+
+        poseAttr_R= poseAttr.replace('_L_', '_R_')
+        print poseAttr, poseAttr_R
         # 检查场景中是否在targetGeo，没有就创建，并放置于bsTarget_Grp中
         self.create_targetGeo(baseGeo, pose, targetOri_Geo, targetGeo)
         if mirror:
             self.create_targetGeo(baseGeo, pose, targetOri_Geo, targetGeo_R)
         # 创建修型所需的临时雕刻模型组
-        self.create_tempSculptGrp(baseGeo, pose, targetOri_Geo, targetGeo,bsNode)
+        self.create_tempSculptGrp(baseGeo, bsNode, pose, targetGeo)
         # 将生成的 targetGeo 加入 blendShape Node,同时用poseGrp上的属性驱动加入的target
-        self.add_Target_To_BsNode(baseGeo, pose, bsNode, poseGrp, targetGeo)
+        self.add_Target_To_BsNode(baseGeo, bsNode,driverValue, pose, poseAttr, poseGrp, targetGeo)
         if mirror:
-            self.add_Target_To_BsNode(baseGeo, pose_R, bsNode, poseGrp_R, targetGeo_R)
+            self.add_Target_To_BsNode(baseGeo,bsNode,driverValue,pose_R,poseAttr_R,poseGrp_R, targetGeo_R)
         # 获取baseGeo,并将其设置为参考模式
         self.set_refVis(baseGeo)
         # 设置baseGe,sculptGeo显示动画
@@ -576,6 +591,12 @@ class CorrectiveBsTool(object):
 
 
     def mirror_targetGeo(self,targetGeo,targetOri_Geo):
+        try:
+            attrs_list = ['tx', 'ty', 'tz', 'rx', 'ry', 'rz', 'sx', 'sy', 'sz', 'v']
+            for attr in attrs_list:
+                pm.mel.eval('CBunlockAttr "{}.{}";'.format(targetOri_Geo,attr))
+        except:
+            pass
 
         targetGeo_R = '{}'.format(targetGeo.replace('L_','R_'))
         target_Grp = 'tempTarget_Grp'
@@ -602,6 +623,9 @@ class CorrectiveBsTool(object):
         pm.mel.eval('CreateWrap;')
 
         # 将 mirrorBs上的 target_copybase属性 改为 1
+        wrapNode = cmds.listConnections('{}Shape'.format(copybase1[0]),type='wrap')
+        if wrapNode:
+            cmds.setAttr('{}.exclusiveBind'.format(wrapNode[0]),1)
         cmds.setAttr("{}.{}".format(mirrorBs[0], target_copybase), 1)
         mirrorTarget = cmds.duplicate(copybase1, name='mirror_{}'.format(targetOri_Geo), returnRootsOnly=True)
         cmds.setAttr('{}.{}'.format(mirrorTarget[0], 'v'), 1)
@@ -667,7 +691,7 @@ class CorrectiveBsTool(object):
         WINDOW_WIDTH = 250
         WINDOW_HEIGHT = 50
         self.delete_exitProgressUI()
-        progressWin = cmds.window(WINDOW_NAME, title = 'Correcting... ',
+        progressWin = cmds.window(WINDOW_NAME, title = 'Mirror target... ',
                              width = WINDOW_WIDTH,
                              height = WINDOW_HEIGHT,
                              sizeable = False)
@@ -719,43 +743,44 @@ class CorrectiveBsTool(object):
 
     def add_pose_to_poseGrp(self,poseGrp,newPose,newPoseValues,hideGrp):
 
-        # 将用户输入的 targetName 写入对应poseGrp组内
-        cmds.addAttr(poseGrp ,longName = newPose ,attributeType='double')
-
+        # # 将用户输入的 targetName 写入对应poseGrp组内
+        # cmds.addAttr(poseGrp ,longName = newPose ,attributeType='double')
+        hide_Grp = pm.PyNode(hideGrp)
         # 将用户输入的 targetName 写入对应 hideGrp 组内
-        cmds.addAttr(hideGrp,longName=newPose,attributeType='double3',keyable=False,readable=True)
-        for num in range(3):
-            cmds.addAttr(hideGrp, longName='{}_0{}'.format(newPose,num),
-                         attributeType='double',
-                         parent='{}'.format(newPose),
-                         keyable=False)
-        cmds.setAttr('{}.{}'.format(hideGrp, newPose), newPoseValues[0], newPoseValues[1], newPoseValues[2])
+        if not hide_Grp.hasAttr(newPose):
+            pm.addAttr(hideGrp,longName=newPose,attributeType='double3')
+            for num in range(3):
+                pm.addAttr(hideGrp, longName='{}_0{}'.format(newPose,num),
+                             attributeType='double',
+                             parent='{}'.format(newPose),
+                             keyable=False)
+            pm.setAttr('{}.{}'.format(hideGrp, newPose), newPoseValues[0], newPoseValues[1], newPoseValues[2])
 
 
-    def create_poseAnimNode(self,pose,poseValues,poseGrp,newPose,newPoseValues):
-        poseAnimNode = '{}_animUU'.format(newPose)
-
-        angleNode = '{}_angle'.format(pose)
-        # 如果没有找到对应的angleNode，就报错并返回
-        if not cmds.objExists(angleNode):
-            om.MGlobal_displayError('QBJ_Tip : The "{}" cannot be found '.format(angleNode))
-            return
-        # 检查是否已创建同样命名的节点
-        if not cmds.objExists(poseAnimNode):
-            poseAnimNode = cmds.createNode('animCurveUU',name = '{}_animUU'.format(newPose))
-        # 将 angleNode 上的 axisAngle.angle 属性连接给 poseAnimNode 的 input
-        cmds.connectAttr('{}.axisAngle.angle'.format(angleNode), '{}.input'.format(poseAnimNode))
-        # 将 poseAnimNode 的output 属性 连接给 poseGrp 上的新添加的 pose 属性
-        cmds.connectAttr('{}.output'.format(poseAnimNode),'{}.{}'.format(poseGrp,newPose))
-
-        # 根据pose的方向，来确定设置的数值
-        valueIndex = self.angleReadableDict[pose.split('_')[-1]]
-        poseValue = poseValues[valueIndex]
-        newPoseValue = newPoseValues[valueIndex]
-        cmds.setKeyframe(poseAnimNode, float = (poseValue - newPoseValue), value=1,
-                         itt='Linear', ott='Linear')
-        cmds.setKeyframe(poseAnimNode, float = poseValue, value=0,
-                         itt='Linear',ott='Linear')
+    # def create_poseAnimNode(self,pose,poseValues,poseGrp,newPose,newPoseValues):
+    #     poseAnimNode = '{}_animUU'.format(newPose)
+    #
+    #     angleNode = '{}_angle'.format(pose)
+    #     # 如果没有找到对应的angleNode，就报错并返回
+    #     if not cmds.objExists(angleNode):
+    #         om.MGlobal_displayError('QBJ_Tip : The "{}" cannot be found '.format(angleNode))
+    #         return
+    #     # 检查是否已创建同样命名的节点
+    #     if not cmds.objExists(poseAnimNode):
+    #         poseAnimNode = cmds.createNode('animCurveUU',name = '{}_animUU'.format(newPose))
+    #     # 将 angleNode 上的 axisAngle.angle 属性连接给 poseAnimNode 的 input
+    #     cmds.connectAttr('{}.axisAngle.angle'.format(angleNode), '{}.input'.format(poseAnimNode))
+    #     # 将 poseAnimNode 的output 属性 连接给 poseGrp 上的新添加的 pose 属性
+    #     cmds.connectAttr('{}.output'.format(poseAnimNode),'{}.{}'.format(poseGrp,newPose))
+    #
+    #     # 根据pose的方向，来确定设置的数值
+    #     valueIndex = self.angleReadableDict[pose.split('_')[-1]]
+    #     poseValue = poseValues[valueIndex]
+    #     newPoseValue = newPoseValues[valueIndex]
+    #     cmds.setKeyframe(poseAnimNode, float = (poseValue - newPoseValue), value=1,
+    #                      itt='Linear', ott='Linear')
+    #     cmds.setKeyframe(poseAnimNode, float = poseValue, value=0,
+    #                      itt='Linear',ott='Linear')
 
 
     # def check_exists_bsTargetInfo(self,baseGeo,pose):
