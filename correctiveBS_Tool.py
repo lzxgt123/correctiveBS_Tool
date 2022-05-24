@@ -121,9 +121,9 @@ class CorrectiveBsTool(object):
 
     def return_targetOriGeo(self, baseGeo):
         if baseGeo:
-            targetGeo = baseGeo + '_target'
-            if cmds.objExists(targetGeo):
-                return targetGeo
+            targetOriGeo = baseGeo + '_target'
+            if cmds.objExists(targetOriGeo):
+                return targetOriGeo
 
 
     def load_targetOriGeo(self):
@@ -133,7 +133,7 @@ class CorrectiveBsTool(object):
             if self.mesh_judge(targetOriGeo):
                 try:
                     for attr in attrs_list:
-                        pm.mel.eval('CBunlockAttr "{}.{}";'.format(targetOriGeo, attr))
+                        cmds.setAttr("{}.{}".format(targetOriGeo, attr), lock=False)
                 except:
                     pass
                 return targetOriGeo[0]
@@ -197,7 +197,7 @@ class CorrectiveBsTool(object):
             if not self.get_blendshape(baseGeo):
                 blendShapeNode = cmds.blendShape( baseGeo,
                                                  name='{}_bs'.format(baseGeo), frontOfChain=True, tc=True)
-                return targetGeo,blendShapeNode
+                return default_targetGeoName,blendShapeNode
 
 
     def create_targetOriGeo(self,baseGeo):
@@ -206,6 +206,7 @@ class CorrectiveBsTool(object):
             pm.setAttr('{}.envelope'.format(skinCluster),0)
         targetOriGeo = cmds.duplicate(baseGeo,name = '{}_target'.format(baseGeo))
         pm.setAttr('{}.envelope'.format(skinCluster),1)
+
         return targetOriGeo
 
 
@@ -223,8 +224,7 @@ class CorrectiveBsTool(object):
         allPoseGrp = 'QBJ_all_PoseGrp'
         # 如果没有allPoseGrp，就创建一个
         if not cmds.objExists(allPoseGrp):
-            allPoseGrp = cmds.group(name='QBJ_all_PoseGrp',empty=True,world=True)
-            cmds.select(cl=True)
+           return
 
         # 生成finger_poseGrp
         if not cmds.objExists('{}_poseGrp'.format(joint)):
@@ -293,47 +293,48 @@ class CorrectiveBsTool(object):
         currentPoseLoc = pose + '_loc'
         currentPoseReaderLoc = pose.split('_')[0] + '_' + pose.split('_')[
             1] + '_poseReader_loc'
+        if cmds.objExists(currentPoseLoc):
+            # 设置fkCtrl,将PoseLoc定位到currentPoseReaderLoc的位置
+            for i in range(len(attrList)):
+                cmds.setAttr('{}.{}'.format(currentPoseLoc,attrList[i]),lock=False)
+                cmds.setAttr('{}.{}'.format(fkCtrl,rotateAxis[i]),valueList[i])
 
-        # 设置fkCtrl,将PoseLoc定位到currentPoseReaderLoc的位置
-        for i in range(len(attrList)):
-            cmds.setAttr('{}.{}'.format(currentPoseLoc,attrList[i]),lock=False)
-            cmds.setAttr('{}.{}'.format(fkCtrl,rotateAxis[i]),valueList[i])
+            locParentConstraint = cmds.parentConstraint(currentPoseReaderLoc,currentPoseLoc,maintainOffset=False)
+            cmds.delete(locParentConstraint)
 
-        locParentConstraint = cmds.parentConstraint(currentPoseReaderLoc,currentPoseLoc,maintainOffset=False)
-        cmds.delete(locParentConstraint)
-
-        # 将 currentPoseLoc 锁定,并将fkCtrl旋转数值清零
-        for i in range(len(attrList)):
-            cmds.setAttr('{}.{}'.format(currentPoseLoc, attrList[i]), lock=True)
-            cmds.setAttr('{}.{}'.format(fkCtrl, rotateAxis[i]), 0)
+            # 将 currentPoseLoc 锁定,并将fkCtrl旋转数值清零
+            for i in range(len(attrList)):
+                cmds.setAttr('{}.{}'.format(currentPoseLoc, attrList[i]), lock=True)
+                cmds.setAttr('{}.{}'.format(fkCtrl, rotateAxis[i]), 0)
 
 
-    def update_poseHide_Info(self,pose,valueList):
+    def update_poseHide_Info(self,pose,poseGrp_Hide,valueList):
 
-        poseGrp_Hide = pose.split('_')[0]+'_'+pose.split('_')[1] + '_poseGrp_Hide'
         attr = pose
-
-        # 如果所选的控制器是正确的控制器，则获取此时控制器上的rotate数值，并将数值重新设置给对应的属性
+        # 如果存在poseGrp_Hide，则获取此时控制器上的rotate数值，并将数值重新设置给对应的属性
         if cmds.objExists(poseGrp_Hide):
             cmds.setAttr('{}.{}'.format(poseGrp_Hide,attr),valueList[0],valueList[1],valueList[2])
         else:
             om.MGlobal_displayError('QBJ_Tip : Can not find {} !!!'.format(poseGrp_Hide))
 
 
-    def update_animNode(self,pose):
+    def update_animNode(self,bsNode,rootPose,pose,poseGrp_Hide,driverValue):
+        PoseDriver_animNode = pose + '_animUU'
+        target_animNode = bsNode + pose
+        direction = rootPose.split('_')[-1]
+        poseValueList =  cmds.getAttr('{}.{}'.format(poseGrp_Hide,pose))[0]
+        poseValue = poseValueList[self.angleReadableDict[direction]]
+        # 更新 PoseDriver_animNode
+        if cmds.objExists(PoseDriver_animNode):
+            if poseValue < 0:
+                poseValue *= -1
+                cmds.keyframe(PoseDriver_animNode, index=(1,1),floatChange= poseValue,option='over', absolute=True)
+            elif poseValue > 0:
+                cmds.keyframe(PoseDriver_animNode, index=(1, 1), floatChange=poseValue, option='over', absolute=True)
 
-        poseGrp_Hide = pose.split('_')[0] + '_' + pose.split('_')[1] + '_poseGrp_Hide'
-        current_animNode = pose+'_animUU'
-        direction = pose.split('_')[-1]
-        valueList =  cmds.getAttr('{}.{}'.format(poseGrp_Hide,pose))
-        valueIndex = self.angleReadableDict[direction]
-        floatValue = valueList[0][valueIndex]
-
-        if floatValue < 0:
-            floatValue *= -1
-            cmds.keyframe(current_animNode, index=(1,1),floatChange= floatValue,option='over', absolute=True)
-        elif floatValue > 0:
-            cmds.keyframe(current_animNode, index=(1, 1), floatChange=floatValue, option='over', absolute=True)
+        # 更新 target_animNode
+        if cmds.objExists(target_animNode):
+            cmds.keyframe(PoseDriver_animNode, index=(1, 1), floatChange=driverValue, option='over', absolute=True)
 
 
     def update_fingerPoseHide_Info(self,pose,fkCtrl,poseGrp_Hide):
@@ -412,26 +413,29 @@ class CorrectiveBsTool(object):
         # 检查场景中是否存在 targetGeo 和 R_targetGeo,没有就创建
         if not cmds.objExists(targetGeo):
             targetGeo = cmds.duplicate(targetOri_Geo, name = targetGeo)
+        return targetGeo
 
 
-    def connect_poseGrp_to_target(self, baseGeo, pose,poseAttr, bsNode, poseGrp, driverValue,target):
-
-
+    def connect_poseGrp_to_target(self, pose,rootPose, bsNode, poseGrp, driverValue,target):
+        animCurveUU_node = '{}_{}'.format(bsNode, pose )
+        if not cmds.objExists(animCurveUU_node):
             # 创建一个animUU 节点
-            animCurveUU_node = cmds.createNode('animCurveUU', name='{}_{}_{}'.format(baseGeo, pose, bsNode))
+            animCurveUU_node = cmds.createNode('animCurveUU', name='{}_{}'.format(bsNode, pose ))
 
-            # 将 animUU上的 input 和 output 属性分别连接给poseGrp 和 blendShape上的target
-            cmds.connectAttr('{}.{}'.format(poseGrp, poseAttr), '{}.input'.format(animCurveUU_node))
+        # 将 animUU上的 input 和 output 属性分别连接给poseGrp 和 blendShape上的target
+        try:
+            cmds.connectAttr('{}.{}'.format(poseGrp, rootPose), '{}.input'.format(animCurveUU_node))
             cmds.connectAttr('{}.output'.format(animCurveUU_node), '{}.{}'.format(bsNode, target))
-
-            # 设置 animCurveUU_node上的属性
-            if driverValue == 1:
-                cmds.setKeyframe(animCurveUU_node, float=0, value=0, itt='flat', ott='flat')
-                cmds.setKeyframe(animCurveUU_node, float=driverValue, value=1, itt='flat', ott='flat')
-            else:
-                cmds.setKeyframe(animCurveUU_node, float=0, value=0, itt='flat', ott='flat')
-                cmds.setKeyframe(animCurveUU_node, float=driverValue, value=1, itt='flat', ott='flat')
-                cmds.setKeyframe(animCurveUU_node, float=1, value=0, itt='flat', ott='flat')
+        except:
+            pass
+        # 设置 animCurveUU_node上的属性
+        if driverValue == 1:
+            cmds.setKeyframe(animCurveUU_node, float=0, value=0, itt='flat', ott='flat')
+            cmds.setKeyframe(animCurveUU_node, float=driverValue, value=1, itt='flat', ott='flat')
+        else:
+            cmds.setKeyframe(animCurveUU_node, float=0, value=0, itt='flat', ott='flat')
+            cmds.setKeyframe(animCurveUU_node, float=driverValue, value=1, itt='flat', ott='flat')
+            cmds.setKeyframe(animCurveUU_node, float=1, value=0, itt='flat', ott='flat')
 
 
     def exist_Target(self, bsNode, target):
@@ -454,18 +458,19 @@ class CorrectiveBsTool(object):
             return None
 
 
-    def add_Target_To_BsNode(self, baseGeo, bsNode,driverValue,pose,poseAttr, poseGrp, targetGeo):
+    def add_Target_To_BsNode(self, baseGeo, bsNode,driverValue,pose,rootPose, poseGrp, targetGeo):
         target = targetGeo
-
+        targetList = cmds.aliasAttr(bsNode,q=True)
         # 如果存在 新增的修型目标体，就把他添加进 blendShape 中
-        if cmds.aliasAttr(bsNode, q=True):
-            index = len(cmds.aliasAttr(bsNode, q=True))
+        if targetList:
+            index = len(targetList)
+            print index
         else:
             index = 0
         if not self.exist_Target(bsNode, target):
             cmds.select(targetGeo,r=True)
-            cmds.blendShape(bsNode, edit=True, t=(baseGeo, index, target, 1.0))
-            self.connect_poseGrp_to_target(baseGeo,pose,poseAttr,bsNode,poseGrp,driverValue,target)
+            cmds.blendShape(bsNode, edit=True, t=(baseGeo, index+1, target, 1.0))
+            self.connect_poseGrp_to_target(pose,rootPose,bsNode,poseGrp,driverValue,target)
             index += 1
             cmds.select(cl=True)
 
@@ -555,10 +560,9 @@ class CorrectiveBsTool(object):
         targetGeo_R = '{}_{}'.format(baseGeo, pose.replace('_L_', '_R_'))
         poseGrp_R = poseGrp.replace('_L_', '_R_')
         pose_R = pose.replace('_L_', '_R_')
-        poseAttr = cmds.getAttr('{}.pose'.format(pose))
+        rootPose = cmds.getAttr('{}.pose'.format(pose))
+        rootPose_R= rootPose.replace('_L_', '_R_')
 
-        poseAttr_R= poseAttr.replace('_L_', '_R_')
-        print poseAttr, poseAttr_R
         # 检查场景中是否在targetGeo，没有就创建，并放置于bsTarget_Grp中
         self.create_targetGeo(baseGeo, pose, targetOri_Geo, targetGeo)
         if mirror:
@@ -566,9 +570,9 @@ class CorrectiveBsTool(object):
         # 创建修型所需的临时雕刻模型组
         self.create_tempSculptGrp(baseGeo, bsNode, pose, targetGeo)
         # 将生成的 targetGeo 加入 blendShape Node,同时用poseGrp上的属性驱动加入的target
-        self.add_Target_To_BsNode(baseGeo, bsNode,driverValue, pose, poseAttr, poseGrp, targetGeo)
+        self.add_Target_To_BsNode(baseGeo, bsNode,driverValue, pose, rootPose, poseGrp, targetGeo)
         if mirror:
-            self.add_Target_To_BsNode(baseGeo,bsNode,driverValue,pose_R,poseAttr_R,poseGrp_R, targetGeo_R)
+            self.add_Target_To_BsNode(baseGeo,bsNode,driverValue,pose_R,rootPose_R,poseGrp_R, targetGeo_R)
         # 获取baseGeo,并将其设置为参考模式
         self.set_refVis(baseGeo)
         # 设置baseGe,sculptGeo显示动画
@@ -594,7 +598,7 @@ class CorrectiveBsTool(object):
         try:
             attrs_list = ['tx', 'ty', 'tz', 'rx', 'ry', 'rz', 'sx', 'sy', 'sz', 'v']
             for attr in attrs_list:
-                pm.mel.eval('CBunlockAttr "{}.{}";'.format(targetOri_Geo,attr))
+                cmds.setAttr( "{}.{}".format(targetOri_Geo,attr),lock = False)
         except:
             pass
 

@@ -125,6 +125,58 @@ class CorrectiveBsUI(QtWidgets.QDialog):
             tool.create_UIAllPoseGrp(PoseListName,PoseList)
 
 
+    def reset_ListWidget(self):
+        # 将 pose添加进listWidget中
+        self.arm_ListWidget_01.clear()
+        for item in self.armPoseList:
+            self.arm_ListWidget_01.addItem(item)
+
+        self.leg_ListWidget_01.clear()
+        for item in self.legPoseList:
+            self.leg_ListWidget_01.addItem(item)
+
+        self.finger_ListWidget_01.clear()
+        for item in self.fingerPoseList:
+            self.finger_ListWidget_01.addItem(item)
+
+        self.torso_ListWidget_01.clear()
+        for item in self.torsoPoseList:
+            self.torso_ListWidget_01.addItem(item)
+
+
+    def update_ListWidget(self):
+        '''
+        读取场景内的UI_allPose_Grp,更新ListWidget
+        :return:
+        '''
+        self.arm_ListWidget_01.clear()
+        self.leg_ListWidget_01.clear()
+        self.finger_ListWidget_01.clear()
+        self.torso_ListWidget_01.clear()
+        # 将 pose添加进listWidget中
+        if cmds.objExists('armPoseList_Grp'):
+            for item in pm.PyNode('armPoseList_Grp').getChildren():
+                self.arm_ListWidget_01.addItem(str(item))
+        # 将没有对应poseGrp的item设置为不可选状态
+        self.check_ifnot_PoseGrp(self.arm_ListWidget_01)
+
+        if cmds.objExists('legPoseList_Grp'):
+            for item in pm.PyNode('legPoseList_Grp').getChildren():
+                self.leg_ListWidget_01.addItem(str(item))
+        # 将没有对应poseGrp的item设置为不可选状态
+        self.check_ifnot_PoseGrp(self.leg_ListWidget_01)
+
+        if cmds.objExists('fingerPoseList_Grp'):
+            for item in pm.PyNode('fingerPoseList_Grp').getChildren():
+                self.finger_ListWidget_01.addItem(str(item))
+
+        if cmds.objExists('torsoPoseList_Grp'):
+            for item in pm.PyNode('torsoPoseList_Grp').getChildren():
+                self.torso_ListWidget_01.addItem(str(item))
+        # 将没有对应poseGrp的item设置为不可选状态
+        self.check_ifnot_PoseGrp(self.torso_ListWidget_01)
+
+
     def showUI(self):
         if cmds.window(self.WINDOW_TITLE, exists=True):
             cmds.deleteUI(self.WINDOW_TITLE)
@@ -203,12 +255,9 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.arm_setAni = self.arm_contextMenu.addAction('Set Animation')
         self.arm_delAni = self.arm_contextMenu.addAction('Del Animation')
         # 将 pose添加进listWidget中
-        if cmds.objExists('armPoseList_Grp'):
-            for item in pm.PyNode('armPoseList_Grp').getChildren():
-                self.arm_ListWidget_01.addItem(str(item))
+        for item in self.armPoseList:
+            self.arm_ListWidget_01.addItem(item)
 
-        # 将没有对应poseGrp的item设置为不可选状态
-        self.check_ifnot_PoseGrp(self.arm_ListWidget_01)
         # 创建 arm_sculpt布局
         self.arm_mirror_CB = QtWidgets.QCheckBox('Mirror')
         self.arm_mirror_CB.setChecked(True)
@@ -231,14 +280,11 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.leg_delAni = self.leg_contextMenu.addAction('Del Animation')
 
 
-
         # 将 pose添加进listWidget中
-        if cmds.objExists('legPoseList_Grp'):
-            for item in pm.PyNode('legPoseList_Grp').getChildren():
-                self.leg_ListWidget_01.addItem(str(item))
+        for item in self.legPoseList:
+            self.leg_ListWidget_01.addItem(item)
 
-        # 将没有对应poseGrp的item设置为不可选状态
-        self.check_ifnot_PoseGrp(self.leg_ListWidget_01)
+
         # 创建leg_sculpt布局
         self.leg_mirror_CB = QtWidgets.QCheckBox('Mirror')
         self.leg_mirror_CB.setChecked(True)
@@ -260,11 +306,10 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.finger_setAni = self.finger_contextMenu.addAction('Set Animation')
         self.finger_delAni = self.finger_contextMenu.addAction('Del Animation')
 
-
         # 将 pose添加进listWidget中
-        if cmds.objExists('fingerPoseList_Grp'):
-            for item in pm.PyNode('fingerPoseList_Grp').getChildren():
-                self.finger_ListWidget_01.addItem(str(item))
+        for item in self.fingerPoseList:
+            self.finger_ListWidget_01.addItem(item)
+
 
         # 创建finger_sculpt布局
         self.finger_mirror_CB = QtWidgets.QCheckBox('Mirror')
@@ -287,11 +332,10 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.torso_setAni = self.torso_contextMenu.addAction('Set Animation')
         self.torso_delAni = self.torso_contextMenu.addAction('Del Animation')
         # 将 pose添加进listWidget中
-        if cmds.objExists('torsoPoseList_Grp'):
-            for item in pm.PyNode('torsoPoseList_Grp').getChildren():
-                self.torso_ListWidget_01.addItem(str(item))
-        # 将没有对应poseGrp的item设置为不可选状态
-        self.check_ifnot_PoseGrp(self.torso_ListWidget_01)
+        for item in self.torsoPoseList:
+            self.torso_ListWidget_01.addItem(item)
+
+
         # 创建torso_sculpt布局
         self.torso_mirror_CB = QtWidgets.QCheckBox('Mirror')
         self.torso_mirror_CB.setChecked(False)
@@ -583,8 +627,8 @@ class CorrectiveBsUI(QtWidgets.QDialog):
             self.baseGeo_LineEdit.setText(str(baseGeo))
             # 检查场景中是否存在targetGeo
             if tool.return_targetOriGeo(baseGeo):
-                targetGeo = tool.return_targetOriGeo(baseGeo)
-                self.targetGeo_LineEdit.setText(str(targetGeo))
+                targetOriGeo = tool.return_targetOriGeo(baseGeo)
+                self.targetGeo_LineEdit.setText(str(targetOriGeo))
 
             bsNode = tool.get_blendshape(baseGeo)
 
@@ -597,16 +641,17 @@ class CorrectiveBsUI(QtWidgets.QDialog):
                     return
             else:
                 self.addBlendShapeConfirmDialog()
+        self.update_ListWidget()
 
 
     def click_targetGeoLoad_Btn(self):
         baseGeo = self.baseGeo_LineEdit.text()
-        targetGeo = self.targetGeo_LineEdit.text()
-        if not targetGeo:
+        targetOriGeo = self.targetGeo_LineEdit.text()
+        if not targetOriGeo:
             if baseGeo:
-                targetGeo = tool.return_targetOriGeo(baseGeo)
-                if targetGeo:
-                    self.targetGeo_LineEdit.setText(str(targetGeo))
+                targetOriGeo = tool.return_targetOriGeo(baseGeo)
+                if targetOriGeo:
+                    self.targetGeo_LineEdit.setText(str(targetOriGeo))
         else:
             self.loadTargetConfirmDialog()
 
@@ -624,6 +669,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         targetGeo = self.targetGeo_LineEdit.text()
         baseGeo = self.baseGeo_LineEdit.text()
         bsTargetGrp = '{}_bsTarget_Grp'.format(baseGeo)
+        uiAllPoseGrp = 'UI_allPose_Grp'
         if bsNode:
             tool.del_blendShape(bsNode)
             self.blendshape_comboBox.clear()
@@ -632,7 +678,10 @@ class CorrectiveBsUI(QtWidgets.QDialog):
             self.targetGeo_LineEdit.clear()
         if cmds.objExists(bsTargetGrp):
             cmds.delete(bsTargetGrp)
-
+        if cmds.objExists(uiAllPoseGrp):
+            cmds.delete(uiAllPoseGrp)
+        # 将 ListWidget设置成默认状态
+        self.reset_ListWidget()
         om.MGlobal_displayInfo('QBJ_Tip : Delete blendShape Node successfully !')
 
 
@@ -641,23 +690,23 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         targetOri_Geo = self.targetGeo_LineEdit.text()
         bsNode = self.blendshape_comboBox.currentText()
         mirror = mirror_CB.isChecked()
-        driverValue = float(self.driver_value_LineEdit.text())
+        driverValue = self.driver_value_LineEdit.text()
         # 检查场景中是否存在以下对象，如缺少一个，则报错并返回
         for geo in [baseGeo, targetOri_Geo]:
             if not cmds.objExists(geo):
-                om.MGlobal_displayError('QBJ_Tip : Can not find {} !!!'.format(geo))
+                om.MGlobal_displayError('QBJ_Tip : Please Load Geo firstly !!!')
                 return
 
         # 在有选中的pose后，才会运行
         if ListWidget_01.currentItem():
             pose = ListWidget_01.currentItem().text()
-
             if  not pose.startswith('__'):
                 # 将sculpt_Btn及其余的item设置为不可选状态
                 self.lock_allItem(ListWidget_01,sculpt_Btn)
                 # 创建 tempSculptGrp，进入雕刻模式
                 poseGrp = pose.split('_')[0] + '_' + pose.split('_')[1] + '_poseGrp'
-                tool.enterSculptMode(baseGeo,bsNode,pose,targetOri_Geo,mirror,poseGrp,driverValue)
+                if driverValue:
+                    tool.enterSculptMode(baseGeo,bsNode,pose,targetOri_Geo,mirror,poseGrp,float(driverValue))
                 # 设置控制器驱动动画
                 self.click_setAnimation(ListWidget_01)
 
@@ -686,10 +735,23 @@ class CorrectiveBsUI(QtWidgets.QDialog):
                 om.MGlobal_displayInfo('QBJ_Tip : Corrective Completed !')
 
 
-    def click_graph_Btn(self):
-        baseGeo = self.baseGeo_LineEdit.text()
-        cmds.select(baseGeo,r=True)
-        pm.mel.eval('GraphEditor')
+    def click_graph_Btn(self,ListWidget_01):
+        # 如果没有选中的pose,就返回
+        if not ListWidget_01.currentItem():
+            return
+
+        bsNode = self.blendshape_comboBox.currentText()
+        currentPose = ListWidget_01.currentItem().text()
+        anim_node = bsNode + currentPose
+        anim_node_R = anim_node.replace('_L_','_R_')
+        # 如果场景中有anim_node,就选择左右的anim_node
+        if cmds.objExists(anim_node):
+            cmds.select(anim_node,r=True)
+            cmds.select(anim_node_R,add=True)
+            pm.mel.eval('GraphEditor')
+        else:
+            cmds.select(bsNode, r=True)
+            pm.mel.eval('GraphEditor')
 
 
     def create_blendShape(self):
@@ -698,6 +760,8 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         baseGeo = self.baseGeo_LineEdit.text()
         targetGeo = self.targetGeo_LineEdit.text()
         if cmds.objExists(baseGeo):
+            self.create_uiPoseGrp()
+
             targetGeo_bsNode_list = tool.add_blendShape(baseGeo,targetGeo,allPoseList)
             # 在targetGeoGrp组上添加bsTargetInfo
             self.targetGeo_LineEdit.setText(str(targetGeo_bsNode_list[0]))
@@ -736,6 +800,8 @@ class CorrectiveBsUI(QtWidgets.QDialog):
 
 
     def click_ListWidget01_item(self,baseGeo,blendShapeNode,ListWidget_01):
+        if not ListWidget_01.currentItem():
+            return
 
         pose = ListWidget_01.currentItem().text()
 
@@ -750,7 +816,8 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         # 选中对应的fkCtrl
         if not pose.startswith('__'):
             fkCtrl = 'FK' + pose.split('_')[0] + '_' + pose.split('_')[1]
-            cmds.select(fkCtrl, r=True)
+            if cmds.objExists(fkCtrl):
+                cmds.select(fkCtrl, r=True)
 
 
     def click_armListWidget01_item(self):
@@ -782,7 +849,8 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         # 选中对应的fkCtrl
         if not fingerPose.startswith('__'):
             fkCtrl = 'FK' + fingerPose.split('_')[0] + '_' + fingerPose.split('_')[1]
-            cmds.select(fkCtrl, r=True)
+            if cmds.objExists(fkCtrl):
+                cmds.select(fkCtrl, r=True)
 
 
     def click_torsoListWidget01_item(self):
@@ -932,12 +1000,16 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         # 如果未获取到当前的pose,就返回
         if not ListWidget_01.currentItem():
             return
-
+        bsNode = self.blendshape_comboBox.currentText()
+        driverValue = float(self.driver_value_LineEdit.text())
         mirror = mirror_cb.isChecked()
         pose = ListWidget_01.currentItem().text()
+        rootPose = cmds.getAttr('{}.pose'.format(pose))
         fkCtrl = 'FK' + pose.split('_')[0] + '_' + pose.split('_')[1]
         pose_R = pose.replace('_L_', '_R_')
         fkCtrl_R = fkCtrl.replace('_L', '_R')
+        poseGrp_Hide = pose.split('_')[0] + '_' + pose.split('_')[1] + '_poseGrp_Hide'
+        poseGrp_Hide_R = poseGrp_Hide.replace('_L_', '_R_')
 
         # 获取此时fkCtrl上的旋转数值
         valueList = []
@@ -945,15 +1017,15 @@ class CorrectiveBsUI(QtWidgets.QDialog):
             valueList = [cmds.getAttr('{}.{}'.format(fkCtrl, axis)) for axis in ['rx', 'ry', 'rz']]
 
         if not pose.startswith('__'):
-            tool.update_poseHide_Info(pose,valueList)
+            tool.update_poseHide_Info(pose,poseGrp_Hide,valueList)
             tool.update_PoseLocPosition(fkCtrl,pose,valueList)
-            tool.update_animNode(pose)
+            tool.update_animNode(bsNode,rootPose,pose,poseGrp_Hide,driverValue)
             om.MGlobal_displayInfo('QBJ_Tip : Update Driver successfully !')
 
             if mirror:
-                tool.update_poseHide_Info(pose_R,valueList)
+                tool.update_poseHide_Info(pose_R,poseGrp_Hide_R,valueList)
                 tool.update_PoseLocPosition(fkCtrl_R,pose_R,valueList)
-                tool.update_animNode(pose_R)
+                tool.update_animNode(bsNode,rootPose,pose_R,poseGrp_Hide_R,driverValue)
                 om.MGlobal_displayInfo('QBJ_Tip : Update Driver successfully !')
 
 
@@ -1024,7 +1096,6 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.removePose(baseGeo,pose,bsNode,targetGeo,uiPoseGrp,hideGrp)
         if mirror:
             self.removePose(baseGeo,pose_R,bsNode,targetGeo_R,uiPoseGrp_R, hideGrp_R)
-
         om.MGlobal_displayInfo('QBJ_Tip : Remove Pose Successfully !')
 
 
