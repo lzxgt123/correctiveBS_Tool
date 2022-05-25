@@ -350,8 +350,11 @@ class CorrectiveBsTool(object):
         direction = pose.split('_')[-1]
         valueList =  cmds.getAttr('{}.{}'.format(poseGrp_Hide,pose))
         valueIndex = self.angleReadableDict[direction]
-        cmds.keyframe(current_animNode, index=(1,1),floatChange= valueList[0][valueIndex],option='over', absolute=True)
-
+        value = valueList[0][valueIndex]
+        if value > 0:
+            cmds.keyframe(current_animNode, index=(1,1),floatChange= value,option='over', absolute=True)
+        else:
+            cmds.keyframe(current_animNode, index=(0, 0), floatChange=value, option='over', absolute=True)
 
     def set_refVis(self,geo):
         if geo:
@@ -417,17 +420,15 @@ class CorrectiveBsTool(object):
 
 
     def connect_poseGrp_to_target(self, pose,rootPose, bsNode, poseGrp, driverValue,target):
-        animCurveUU_node = '{}_{}'.format(bsNode, pose )
+        animCurveUU_node = '{}_{}'.format(bsNode, pose)
         if not cmds.objExists(animCurveUU_node):
             # 创建一个animUU 节点
-            animCurveUU_node = cmds.createNode('animCurveUU', name='{}_{}'.format(bsNode, pose ))
+            animCurveUU_node = cmds.createNode('animCurveUU', name='{}_{}'.format(bsNode, pose))
 
         # 将 animUU上的 input 和 output 属性分别连接给poseGrp 和 blendShape上的target
-        try:
-            cmds.connectAttr('{}.{}'.format(poseGrp, rootPose), '{}.input'.format(animCurveUU_node))
-            cmds.connectAttr('{}.output'.format(animCurveUU_node), '{}.{}'.format(bsNode, target))
-        except:
-            pass
+        cmds.connectAttr('{}.{}'.format(poseGrp, rootPose), '{}.input'.format(animCurveUU_node))
+        cmds.connectAttr('{}.output'.format(animCurveUU_node), '{}.{}'.format(bsNode, target))
+
         # 设置 animCurveUU_node上的属性
         if driverValue == 1:
             cmds.setKeyframe(animCurveUU_node, float=0, value=0, itt='flat', ott='flat')

@@ -503,7 +503,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.tabWidget.addTab(self.leg_Tab, 'leg')
         self.tabWidget.addTab(self.finger_Tab, 'finger')
         self.tabWidget.addTab(self.torso_Tab, 'torso')
-        self.tabWidget.addTab(self.custom_Tab, 'custom')
+        # self.tabWidget.addTab(self.custom_Tab, 'custom')
 
 
         # 创建控制器旋转数值显示 布局
@@ -535,7 +535,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.arm_sculpt_Btn.clicked.connect(lambda :self.click_sculpt_Btn(self.arm_ListWidget_01,
                                                                           self.arm_sculpt_Btn,
                                                                           self.arm_mirror_CB))
-        self.arm_graph_Btn.clicked.connect(self.click_graph_Btn)
+        self.arm_graph_Btn.clicked.connect(lambda :self.click_graph_Btn(self.arm_ListWidget_01))
         self.arm_exit_Btn.clicked.connect(lambda :self.click_exit_Btn(self.arm_ListWidget_01,
                                                                       self.arm_sculpt_Btn,
                                                                       self.arm_mirror_CB))
@@ -545,21 +545,21 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.leg_exit_Btn.clicked.connect(lambda :self.click_exit_Btn(self.leg_ListWidget_01,
                                                                       self.leg_sculpt_Btn,
                                                                       self.leg_mirror_CB))
-        self.leg_graph_Btn.clicked.connect(self.click_graph_Btn)
+        self.leg_graph_Btn.clicked.connect(lambda :self.click_graph_Btn(self.leg_ListWidget_01))
         self.finger_sculpt_Btn.clicked.connect(lambda :self.click_sculpt_Btn(self.finger_ListWidget_01,
                                                                              self.finger_sculpt_Btn,
                                                                              self.finger_mirror_CB))
         self.finger_exit_Btn.clicked.connect(lambda :self.click_exit_Btn(self.finger_ListWidget_01,
                                                                          self.finger_sculpt_Btn,
                                                                          self.finger_mirror_CB))
-        self.finger_graph_Btn.clicked.connect(self.click_graph_Btn)
+        self.finger_graph_Btn.clicked.connect(lambda :self.click_graph_Btn(self.finger_ListWidget_01))
         self.torso_sculpt_Btn.clicked.connect(lambda :self.click_sculpt_Btn(self.torso_ListWidget_01,
                                                                             self.torso_sculpt_Btn,
                                                                             self.torso_mirror_CB))
         self.torso_exit_Btn.clicked.connect(lambda :self.click_exit_Btn(self.torso_ListWidget_01,
                                                                         self.torso_sculpt_Btn,
                                                                         self.torso_mirror_CB))
-        self.torso_graph_Btn.clicked.connect(self.click_graph_Btn)
+        self.torso_graph_Btn.clicked.connect(lambda :self.click_graph_Btn(self.torso_ListWidget_01))
 
 
         # self.arm_CreateBtn.clicked.connect(self.click_armCreate_Btn)
@@ -590,7 +590,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         self.finger_setAni.triggered.connect(lambda: self.click_setAnimation(self.finger_ListWidget_01))
         self.finger_delAni.triggered.connect(lambda: self.click_delAnimation(self.finger_ListWidget_01))
         self.finger_updateDriver.triggered.connect(self.click_updateFingerDriver)
-        self.finger_addPose.triggered.connect(self.click_fingerAddPose)
+        self.finger_addPose.triggered.connect(lambda : self.click_addPose(self.finger_ListWidget_01,self.finger_mirror_CB))
         self.finger_removePose.triggered.connect(lambda: self.click_removePose(self.finger_ListWidget_01,self.finger_mirror_CB))
         self.finger_resetPose.triggered.connect(lambda: self.click_resetPose(self.finger_ListWidget_01,self.finger_mirror_CB))
 
@@ -686,29 +686,36 @@ class CorrectiveBsUI(QtWidgets.QDialog):
 
 
     def click_sculpt_Btn(self,ListWidget_01,sculpt_Btn,mirror_CB):
+        # 只在有选中的pose后，才会运行
+        if not ListWidget_01.currentItem():
+            return
+
         baseGeo = self.baseGeo_LineEdit.text()
         targetOri_Geo = self.targetGeo_LineEdit.text()
         bsNode = self.blendshape_comboBox.currentText()
         mirror = mirror_CB.isChecked()
         driverValue = self.driver_value_LineEdit.text()
+        pose = ListWidget_01.currentItem().text()
+        poseGrp = pose.split('_')[0] + '_' + pose.split('_')[1] + '_poseGrp'
+        # 如果是手指部分的修型，则poseGrp为'Finger_L_poseGrp'
+        if ListWidget_01 == self.finger_ListWidget_01:
+            poseGrp = 'Finger_L_poseGrp'
+
         # 检查场景中是否存在以下对象，如缺少一个，则报错并返回
         for geo in [baseGeo, targetOri_Geo]:
             if not cmds.objExists(geo):
                 om.MGlobal_displayError('QBJ_Tip : Please Load Geo firstly !!!')
                 return
 
-        # 在有选中的pose后，才会运行
-        if ListWidget_01.currentItem():
-            pose = ListWidget_01.currentItem().text()
-            if  not pose.startswith('__'):
-                # 将sculpt_Btn及其余的item设置为不可选状态
-                self.lock_allItem(ListWidget_01,sculpt_Btn)
-                # 创建 tempSculptGrp，进入雕刻模式
-                poseGrp = pose.split('_')[0] + '_' + pose.split('_')[1] + '_poseGrp'
-                if driverValue:
-                    tool.enterSculptMode(baseGeo,bsNode,pose,targetOri_Geo,mirror,poseGrp,float(driverValue))
-                # 设置控制器驱动动画
-                self.click_setAnimation(ListWidget_01)
+        # 过滤'__'开头的Item
+        if  not pose.startswith('__'):
+            # 将sculpt_Btn及其余的item设置为不可选状态
+            self.lock_allItem(ListWidget_01,sculpt_Btn)
+            # 创建 tempSculptGrp，进入雕刻模式
+            if driverValue:
+                tool.enterSculptMode(baseGeo,bsNode,pose,targetOri_Geo,mirror,poseGrp,float(driverValue))
+            # 设置控制器驱动动画
+            self.click_setAnimation(ListWidget_01)
 
 
     def click_exit_Btn(self,ListWidget_01,sculpt_Btn,mirror_CB):
@@ -799,7 +806,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
             self.changeTargetGeo()
 
 
-    def click_ListWidget01_item(self,baseGeo,blendShapeNode,ListWidget_01):
+    def click_ListWidget01_item(self,ListWidget_01):
         if not ListWidget_01.currentItem():
             return
 
@@ -823,13 +830,13 @@ class CorrectiveBsUI(QtWidgets.QDialog):
     def click_armListWidget01_item(self):
         baseGeo = self.baseGeo_LineEdit.text()
         blendShapeNode = self.blendshape_comboBox.currentText()
-        self.click_ListWidget01_item(baseGeo,blendShapeNode,self.arm_ListWidget_01)
+        self.click_ListWidget01_item(self.arm_ListWidget_01)
 
 
     def click_legListWidget01_item(self):
         baseGeo = self.baseGeo_LineEdit.text()
         blendShapeNode = self.blendshape_comboBox.currentText()
-        self.click_ListWidget01_item(baseGeo, blendShapeNode, self.leg_ListWidget_01)
+        self.click_ListWidget01_item( self.leg_ListWidget_01)
 
 
     def click_fingerListWidget01_item(self):
@@ -856,7 +863,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
     def click_torsoListWidget01_item(self):
         baseGeo = self.baseGeo_LineEdit.text()
         blendShapeNode = self.blendshape_comboBox.currentText()
-        self.click_ListWidget01_item(baseGeo, blendShapeNode, self.torso_ListWidget_01)
+        self.click_ListWidget01_item( self.torso_ListWidget_01)
 
 
     def loadDriverInfo(self,ListWidget_01):
@@ -1040,7 +1047,6 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         poseGrp_Hide = 'Finger_L_poseGrp_Hide'
 
         pose_R = pose.replace('_L_', '_R_')
-        fkCtrl_R = fkCtrl.replace('_L', '_R')
         poseGrp_Hide_R = 'Finger_R_poseGrp_Hide'
 
         if not pose.startswith('__'):
@@ -1048,19 +1054,25 @@ class CorrectiveBsUI(QtWidgets.QDialog):
             tool.update_fingerAnimNode(pose,poseGrp_Hide)
             om.MGlobal_displayInfo('QBJ_Tip : Update Driver successfully !')
             if mirror:
-                tool.update_fingerPoseHide_Info(pose_R,fkCtrl_R,poseGrp_Hide_R)
+                tool.update_fingerPoseHide_Info(pose_R,fkCtrl,poseGrp_Hide_R)
                 tool.update_fingerAnimNode(pose_R,poseGrp_Hide_R)
                 om.MGlobal_displayInfo('QBJ_Tip : Update Driver successfully !')
 
 
     def click_addPose(self,ListWidget_01,mirror_cb):
+        if not ListWidget_01.currentItem():
+            return
+
         pose = cmds.getAttr('{}.pose'.format(ListWidget_01.selectedItems()[0].text()))
         index =  ListWidget_01.currentIndex().row()
         mirror = mirror_cb.isChecked()
         fkCtrl =  'FK' + pose.split('_')[0] + '_' + pose.split('_')[1]
         newPoseValues = [cmds.getAttr('{}.{}'.format(fkCtrl,attr)) for attr in ['rx','ry','rz']]
         poseGrp = pose.split('_')[0] + '_' + pose.split('_')[1] + '_poseGrp'
+        if ListWidget_01 == self.finger_ListWidget_01:
+            poseGrp = 'Finger_L_poseGrp'
         hideGrp = poseGrp + '_Hide'
+
         poseValues = cmds.getAttr('{}.{}'.format(hideGrp, pose))[0]
         if not cmds.objExists(poseGrp):
             om.MGlobal_displayError('QBJ_Tip : Can not find {} !!!'.format(poseGrp))
@@ -1080,6 +1092,10 @@ class CorrectiveBsUI(QtWidgets.QDialog):
 
 
     def click_removePose(self,ListWidget_01,mirror_cb):
+        # 只在有选中的pose后，才会运行
+        if not ListWidget_01.currentItem():
+            return
+
         baseGeo = self.baseGeo_LineEdit.text()
         pose = ListWidget_01.currentItem().text()
         mirror = mirror_cb.isChecked()
@@ -1091,6 +1107,9 @@ class CorrectiveBsUI(QtWidgets.QDialog):
         hideGrp_R  = hideGrp.replace('_L_','_R_')
         targetGeo = baseGeo + '_' + pose
         targetGeo_R = targetGeo.replace('_L_','_R_')
+        if ListWidget_01 == self.finger_ListWidget_01:
+            hideGrp = 'Finger_L_poseGrp_Hide'
+            hideGrp_R = 'Finger_R_poseGrp_Hide'
         # 移除当前选择的item
         ListWidget_01.takeItem(ListWidget_01.currentRow())
         self.removePose(baseGeo,pose,bsNode,targetGeo,uiPoseGrp,hideGrp)
@@ -1100,6 +1119,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
 
 
     def click_fingerAddPose(self):
+
         print 'click_fingerAddPose'
 
 
@@ -1131,7 +1151,11 @@ class CorrectiveBsUI(QtWidgets.QDialog):
 
     def loadFingerDriverInfo(self):
         fingerPoseGrp = 'Finger_L_poseGrp'
-        fingerPose = self.finger_ListWidget_01.currentItem().text()
+        uiFingerPoseGrp = self.finger_ListWidget_01.currentItem().text()
+        if not cmds.objExists(uiFingerPoseGrp):
+            om.MGlobal_displayError('QBj_Tip : Can not find {} in the scene'.format(fingerPoseGrp))
+            return
+        fingerPose = cmds.getAttr('{}.pose'.format(uiFingerPoseGrp))
         # 将poseGrp上的数据显示在driver_LineEdit中
         if not fingerPose.startswith('__'):
             if cmds.objExists(fingerPoseGrp):
@@ -1214,7 +1238,7 @@ class CorrectiveBsUI(QtWidgets.QDialog):
 
     def removePose(self,baseGeo,pose,bsNode,targetGeo,uiPoseGrp,hideGrp):
         hide_Grp = pm.PyNode(hideGrp)
-
+        animCurveUU_node = '{}_{}'.format(bsNode, pose)
         # 删除场景中对应的 uiPoseGrp
         if pm.objExists(uiPoseGrp):
             pm.delete(uiPoseGrp)
@@ -1228,9 +1252,11 @@ class CorrectiveBsUI(QtWidgets.QDialog):
             weight = cmds.getAttr('{}.{}'.format(bsNode,targetGeo))
             cmds.blendShape(bsNode,edit=True,remove=True,target=(baseGeo,index,targetGeo,1))
         # 删除场景中存在的 targetGeo
-        if pm.objExists(targetGeo):
-            pm.delete(targetGeo)
-
+        if cmds.objExists(targetGeo):
+            cmds.delete(targetGeo)
+        # 删除场景中存在的 animCurveUU_node
+        if cmds.objExists(animCurveUU_node):
+            cmds.delete(animCurveUU_node)
 
     def getTargetIndexDict(self,bsNode):
         '''
