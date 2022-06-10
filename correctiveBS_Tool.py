@@ -465,7 +465,6 @@ class CorrectiveBsTool(object):
         # 如果存在 新增的修型目标体，就把他添加进 blendShape 中
         if targetList:
             index = len(targetList)
-            print index
         else:
             index = 0
         if not self.exist_Target(bsNode, target):
@@ -525,23 +524,14 @@ class CorrectiveBsTool(object):
     def set_sculptGeo_color(self,baseGeo,sculptGeo):
 
         sculptGeo_blinn = '{}_rigSculpt_skin'.format(baseGeo)
-        rigSculpt_skinSG = '{}SG'.format(sculptGeo_blinn)
+
         # 如果场景中有sculptGeo_blinn ,就删除
-        if cmds.objExists(rigSculpt_skinSG):
-            cmds.delete(rigSculpt_skinSG)
         if not cmds.objExists(sculptGeo_blinn):
-            cmds.delete(sculptGeo_blinn)
+            sculptGeo_blinn = cmds.shadingNode('blinn',name = '{}_rigSculpt_skin'.format(baseGeo), asShader=True)
 
-        # 检查sculptGeo是否已经连接了shadingNode
-        connectedAttr = cmds.listConnections('{}Shape.instObjGroups[0]'.format(sculptGeo),destination=True, plugs=True)
-        if connectedAttr:
-            cmds.disconnectAttr('{}Shape.instObjGroups[0]'.format(sculptGeo),connectedAttr[0])
-
-        # 创建 rigSculpt_skinSG 和 sculptGeo_blinn节点
-        rigSculpt_skinSG = cmds.createNode('shadingEngine',name = '{}SG'.format(sculptGeo_blinn))
-        sculptGeo_blinn = cmds.shadingNode('blinn', asShader=True, name='{}_rigSculpt_skin'.format(baseGeo))
-        cmds.connectAttr('{}.outColor'.format(sculptGeo_blinn),'{}.surfaceShader'.format(rigSculpt_skinSG))
-        cmds.sets('{}Shape'.format(sculptGeo), edit=True,forceElement = rigSculpt_skinSG )
+        # 选中物体，并赋予材质
+        cmds.select(sculptGeo,r=True)
+        cmds.hyperShade(assign=sculptGeo_blinn)
 
         # 设置 sculptGeo_blinn 参数
         color = [0.168, 0.434, 0.679]
